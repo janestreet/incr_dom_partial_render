@@ -369,101 +369,25 @@ module type S = sig
     -> attrs:Vdom.Attr.t list
     -> 'row t Incr.t
 
-  module Derived_model : sig
-    type 'a t = 'a Extra.t
-
-    val create
-      :  Model.t Incr.t
-      -> rows:'a Row_id.Map.t Incr.t
-      (** This is a list and not a map so the app can decide order *)
-      -> columns:(Column_id.t * 'a Column.t) list Incr.t
-      -> 'a t Incr.t
-
-    val sorted_rows : 'a t -> 'a Key.Map.t
-    val sort_criteria : 'a t -> 'a Column.t Sort_criteria.t
-    val scroll_region : _ t -> Scroll_region.t option
-  end
-
   (** Used for scrolling to rows/columns upon focusing them *)
-  val on_display : old_model:Model.t -> Model.t -> _ Derived_model.t -> unit
+  val on_display : old_model:Model.t -> Model.t -> _ Extra.t -> unit
 
   (** Used to handle sort column clicking *)
-  val apply_action : Model.t -> _ Derived_model.t -> Action.t -> Model.t
+  val apply_action : Model.t -> _ Extra.t -> Action.t -> Model.t
 
   (** Measures rows, table and viewport *)
-  val update_visibility : Model.t -> _ Derived_model.t -> Model.t
+  val update_visibility : Model.t -> _ Extra.t -> Model.t
 
   (** Returns a full partially-rendered <table> node with header. [render_row] function
       should render <tr> nodes. *)
   val view
     :  ?override_header_on_click:(Column_id.t -> Dom_html.mouseEvent Js.t -> Vdom.Event.t)
     -> Model.t Incr.t
-    -> 'a Derived_model.t Incr.t
+    -> 'a Extra.t Incr.t
     -> render_row:'a row_renderer
     -> inject:(Action.t -> Vdom.Event.t)
     -> attrs:Vdom.Attr.t list
     -> Vdom.Node.t Incr.t
-
-
-  val current_key : _ Derived_model.t -> row_id:Row_id.t -> Key.t option
-
-  val scroll_row_into_scroll_region
-    :  Model.t
-    -> _ Derived_model.t
-    -> Row_id.t
-    -> Scroll_result.t
-
-  val scroll_col_into_scroll_region
-    :  Model.t
-    -> _ Derived_model.t
-    -> Column_id.t
-    -> Scroll_result.t
-
-  val scroll_focus_into_scroll_region : Model.t -> _ Derived_model.t -> Scroll_result.t
-
-  val focus_is_in_scroll_region
-    :  ?scroll_margin:Margin.t
-    -> Model.t
-    -> _ Derived_model.t
-    -> bool option
-
-  val get_focus_position : Model.t -> _ Derived_model.t -> float option * float option
-  val get_focus_rect : Model.t -> _ Derived_model.t -> float Js_misc.Rect.t option
-
-  val scroll_row_to_position
-    :  ?keep_in_scroll_region:unit
-    -> Model.t
-    -> _ Derived_model.t
-    -> Row_id.t
-    -> position:float
-    -> Scroll_result.t
-
-  val scroll_col_to_position
-    :  ?keep_in_scroll_region:unit
-    -> Model.t
-    -> _ Derived_model.t
-    -> Column_id.t
-    -> position:float
-    -> Scroll_result.t
-
-  val scroll_focus_to_position
-    :  ?keep_in_scroll_region:unit
-    -> Model.t
-    -> _ Derived_model.t
-    -> position:float * float
-    -> Scroll_result.t
-
-  val find_row_by_position
-    :  Model.t
-    -> _ Derived_model.t
-    -> float
-    -> [`Before | `At of Row_id.t | `After] option
-
-  val find_col_by_position
-    :  Model.t
-    -> _ Derived_model.t
-    -> float
-    -> [`Before | `At of Column_id.t | `After] option
 end
 
 module type Table = sig

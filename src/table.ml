@@ -308,8 +308,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     [@@deriving fields]
   end
 
-  module Extra_util = struct
-    open Extra_model
+  module Extra = struct
+    include Extra_model
 
     let create m ~rows ~(columns : (Column_id.t * _ Column.t) list Incr.t) =
       let scroll_region =
@@ -863,13 +863,6 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ;;
   end
 
-  module Extra = struct
-    include Extra_model
-    include Extra_util
-  end
-
-  include Extra_util
-
   let on_display ~(old_model : Model.t option Incr.t) (model : Model.t Incr.t) extra =
     let%map old_focus_row = old_model >>| Option.map ~f:Model.focus_row
     and focus_row = model >>| Model.focus_row
@@ -1166,8 +1159,6 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       model
       view
   ;;
-
-  module Derived_model = Extra
 
   let on_display ~(old_model : Model.t) (m : Model.t) d =
     if old_model.focus_row <> m.focus_row || old_model.focus_col <> m.focus_col
