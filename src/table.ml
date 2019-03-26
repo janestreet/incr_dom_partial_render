@@ -244,8 +244,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
     let sort_dirs t = List.map t.sort_criteria ~f:Sort_criteria.By_column.dir
     let sort_columns t = List.map t.sort_criteria ~f:Sort_criteria.By_column.column
-    let set_sort_criteria = Field.fset Fields.sort_criteria
+    let set_float_first_col = Field.fset Fields.float_first_col
     let set_float_header = Field.fset Fields.float_header
+    let set_scroll_margin = Field.fset Fields.scroll_margin
+    let set_sort_criteria = Field.fset Fields.sort_criteria
 
     let cycle_sorting ?keep_existing_cols t column_id ~next_dir =
       let prev_dir =

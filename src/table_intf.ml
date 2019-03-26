@@ -199,8 +199,10 @@ module type S = sig
     val sort_columns : t -> Column_id.t list
     val sort_dirs : t -> Sort_dir.t list
     val scroll_margin : t -> Margin.t
-    val set_sort_criteria : t -> Base_sort_criteria.t -> t
+    val set_float_first_col : t -> Float_type.t -> t
     val set_float_header : t -> Float_type.t -> t
+    val set_scroll_margin : t -> Margin.t -> t
+    val set_sort_criteria : t -> Base_sort_criteria.t -> t
 
     (** [cycle_sorting] computes and sets new sort criteria based on the current criteria.
         If the given column id already exists in the sort criteria, the column's sort
@@ -228,16 +230,16 @@ module type S = sig
   end
 
   module Action : sig
-    type t [@@deriving sexp, compare]
-
-    (** Moves the current focus in a given direction. If there is no focus it focuses the
-        top or bottom row on moving down and up respectively. *)
-    val move_focus_row : Focus_dir.t -> t
-
-    val move_focus_col : Focus_dir.t -> t
-    val set_focus_row : Row_id.t option -> t
-    val set_focus_col : Column_id.t option -> t
-    val page_focus_row : Focus_dir.t -> t
+    type t =
+      | Sort_column_clicked of Column_id.t
+      (** Moves the current focus in a given direction. If there is no focus it focuses
+          the top or bottom row on moving down and up respectively. *)
+      | Move_focus_row of Focus_dir.t
+      | Move_focus_col of Focus_dir.t
+      | Set_focus_row of Row_id.t option
+      | Set_focus_col of Column_id.t option
+      | Page_focus_row of Focus_dir.t
+    [@@deriving sexp, compare, variants]
   end
 
   (** Used to expose some extra information about a component that's useful for
