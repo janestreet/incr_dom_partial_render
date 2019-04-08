@@ -1,4 +1,5 @@
 open! Core_kernel
+open Poly
 open! Import
 open Vdom
 include Table_intf
@@ -966,19 +967,24 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           Base_sort_criteria.find_precedence_and_dir sort_criteria key
         in
         let sort_direction_indicator =
-          let indicator =
-            Option.bind precedence_and_dir ~f:(fun (precedence, dir) ->
-              Sort_dir.indicator dir ~precedence)
-          in
-          match indicator with
-          | None -> ""
-          | Some ind -> sprintf " %s" ind
+          match precedence_and_dir with
+          | None -> Node.none
+          | Some (precedence, dir) ->
+            (match Sort_dir.indicator dir ~precedence with
+             | None -> Node.none
+             | Some indicator ->
+               let indicator_attrs =
+                 Sort_dir.indicator_class dir ~precedence
+                 |> Option.map ~f:Attr.class_
+                 |> Option.to_list
+               in
+               Node.span indicator_attrs [ Node.text (sprintf " %s" indicator) ])
         in
         let sort_direction_classes =
           match precedence_and_dir with
           | None -> []
           | Some (precedence, dir) ->
-            List.filter_opt [ Some "sorted"; Sort_dir.class_ dir ~precedence ]
+            List.filter_opt [ Some "sorted"; Sort_dir.header_class dir ~precedence ]
         in
         let on_click =
           Option.value_map (Column.sort_by data) ~default:[] ~f:(fun _ ->
@@ -995,7 +1001,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           @ on_click
           @ [ Attr.style (Css_gen.concat [ sticky_style; data.Column.header_style ]) ]
         in
-        Node.th attrs [ data.Column.header; Node.text sort_direction_indicator ])
+        Node.th attrs [ data.Column.header; sort_direction_indicator ])
     in
     let group_nodes =
       let top_sticky_pos = finalize_sticky_pos top_sticky_pos in
@@ -1228,11 +1234,13 @@ module Default_sort_spec = struct
       Some (dir_ind ^ precedence_ind)
     ;;
 
-    let class_ t ~precedence:_ =
+    let header_class t ~precedence:_ =
       match t with
       | Ascending -> Some "sorted-asc"
       | Descending -> Some "sorted-desc"
     ;;
+
+    let indicator_class _ ~precedence:_ = Some "sorted-indicator"
 
     let sign = function
       | Ascending -> 1

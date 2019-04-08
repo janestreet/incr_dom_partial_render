@@ -17,16 +17,18 @@ module type Sort_dir = sig
       update the sort direction when a header is clicked on. *)
   val next : t option -> t option
 
-  (** [indicator] and [class_] convert the sort direction and precedence of a column from
-      the sort criteria into a string symbol and a css class respectively in order to
-      display sort information in the table.
+  (** [indicator], [header_class] and [indicator_class] convert the sort direction and
+      precedence of a column from the sort criteria into a string symbol and css classes
+      for the header and the indicator respectively in order to display sort information
+      in the table.
 
       [indicator] returns a symbol that is displayed in the header of the corresponding
-      column, while [class_] returns a css class that is assigned to the header element.
+      column, [header_class] returns a css class that is assigned to the header element,
+      and [indicator_class] returns a css class assigned to the indicator itself.
 
       The [precedence] is always a positive integer (i.e. it starts at 1, not 0).
 
-      A column that is not in the sort criteria is assigned an [indicator] and [class_] of
+      A column that is not in the sort criteria is assigned an [indicator] and classes of
       [None].
 
       Examples of suitable indicators are:
@@ -35,7 +37,8 @@ module type Sort_dir = sig
   *)
 
   val indicator : t -> precedence:int -> string option
-  val class_ : t -> precedence:int -> string option
+  val header_class : t -> precedence:int -> string option
+  val indicator_class : t -> precedence:int -> string option
 end
 
 (** [Sort_spec] defines how rows are sorted in the table. *)
