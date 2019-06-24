@@ -121,7 +121,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             Sort_spec.compare_rows_if_equal_keys ~cmp_row_id:Row_id.compare b.B.dir
           in
           Comparable.lexicographic
-            [ (fun t1 t2 -> List.compare compare_by_col t1.sort_criteria t2.sort_criteria)
+            [ (fun t1 t2 ->
+                List.compare compare_by_col t1.sort_criteria t2.sort_criteria)
             ; (fun t1 t2 -> compare_if_equal_keys t1.row_id t2.row_id)
             ]
             t1
@@ -185,19 +186,18 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
   module Model = struct
     type t =
-      { id :
-          Table_id.t
+      { id : Table_id.t
       (* To avoid DOM id collisions. Never changes. *)
       (* Settings from client. Never change *)
       ; float_header : Float_type.t
       ; float_first_col : Float_type.t
       ; scroll_margin : Margin.t
-      ; scroll_region :
-          Scroll_region.Id.t (* UI state. Changed by user during app usage *)
+      ; scroll_region : Scroll_region.Id.t
+      (* UI state. Changed by user during app usage *)
       ; focus_row : Row_id.t option
       ; focus_col : Column_id.t option
-      ; sort_criteria :
-          Base_sort_criteria.t (* Info measured from render. Changes each render. *)
+      ; sort_criteria : Base_sort_criteria.t
+      (* Info measured from render. Changes each render. *)
       ; height_cache : Row_view.Height_cache.t
       ; visibility_info : Visibility_info.t option
       ; col_group_row_height : int
@@ -486,8 +486,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let f =
         match is_currently_floating, f_if_currently_floating with
         | true, Some f' -> f'
-        | false, _
-        | _, None -> f
+        | false, _ | _, None -> f
       in
       f
         ~scroll_region_start:view_rect.left
@@ -741,8 +740,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       in
       match row, col with
       | None, None -> None
-      | None, Some b
-      | Some b, None -> Some b
+      | None, Some b | Some b, None -> Some b
       | Some b1, Some b2 -> Some (b1 && b2)
     ;;
 
@@ -843,8 +841,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             in
             match with_top_margin, with_bottom_margin with
             | Some h1, Some h2 -> (h1 +. h2) /. 2.
-            | Some h, None
-            | None, Some h -> h
+            | Some h, None | None, Some h -> h
             | None, None -> curr_bottom -. curr_top))
     ;;
 
@@ -1251,8 +1248,7 @@ module Default_sort_spec = struct
   let compare_keys dir k1 k2 =
     match (k1 : Sort_key.t), (k2 : Sort_key.t) with
     (* Always sort nulls last regardless of the sort direction *)
-    | Null, _
-    | _, Null -> Sort_key.compare k1 k2
+    | Null, _ | _, Null -> Sort_key.compare k1 k2
     | _, _ -> Sort_key.compare k1 k2 * Sort_dir.sign dir
   ;;
 

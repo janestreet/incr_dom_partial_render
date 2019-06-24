@@ -49,11 +49,11 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   end
 
   type 'v t =
-    { heights : Heights.t  (** Acceleration structure for height queries *)
+    { heights : Heights.t (** Acceleration structure for height queries *)
     ; render_range : Sort_key.t Interval.t
     (** Section of keys to put in DOM
         This includes extra rows above and below what is actually visible *)
-    ; rows_to_render : 'v Sort_key.Map.t  (** Full map of [render_range]  *)
+    ; rows_to_render : 'v Sort_key.Map.t (** Full map of [render_range]  *)
     ; measurements : Measurements.t option
     ; height_cache : Height_cache.t
     (** The height cache is stashed here after trimming so that it can be
@@ -127,8 +127,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
             | None -> Map.max_elt rows |> Option.map ~f:fst
           in
           match key_top, key_bot with
-          | None, _
-          | _, None -> Empty
+          | None, _ | _, None -> Empty
           | Some top, Some bot -> Range (top, bot))
       in
       visible_range
@@ -247,7 +246,13 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     and height_cache = height_cache
     and measurements = measurements
     and min_key, max_key = min_and_max_key in
-    { heights; render_range; rows_to_render; measurements; height_cache; min_key; max_key
+    { heights
+    ; render_range
+    ; rows_to_render
+    ; measurements
+    ; height_cache
+    ; min_key
+    ; max_key
     }
   ;;
 

@@ -60,7 +60,8 @@ end
 module Scroll_result : sig
   type t =
     [ `Scrolled
-    | `Didn't_scroll ]
+    | `Didn't_scroll
+    ]
 
   val combine : t -> t -> t
   val scrolled : t -> bool

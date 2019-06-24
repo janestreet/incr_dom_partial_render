@@ -85,13 +85,13 @@ end
 module Scroll_result = struct
   type t =
     [ `Scrolled
-    | `Didn't_scroll ]
+    | `Didn't_scroll
+    ]
 
   let combine t1 t2 =
     match t1, t2 with
     | `Didn't_scroll, `Didn't_scroll -> `Didn't_scroll
-    | `Scrolled, _
-    | _, `Scrolled -> `Scrolled
+    | `Scrolled, _ | _, `Scrolled -> `Scrolled
   ;;
 
   let scrolled = function
@@ -176,8 +176,7 @@ module Scroll = struct
     let shift =
       match start_overflow, end_overflow with
       | None, None -> 0.
-      | Some shift, None
-      | Some shift, Some _ -> shift
+      | Some shift, None | Some shift, Some _ -> shift
       | None, Some shift ->
         (* Do not shift element start past the start margin *)
         let excess_shift =

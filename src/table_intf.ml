@@ -322,7 +322,7 @@ module type S = sig
       :  Model.t
       -> _ t
       -> float
-      -> [`Before | `At of Row_id.t | `After] option
+      -> [ `Before | `At of Row_id.t | `After ] option
 
     (** Finds the column id at a given horizontal position on the page, or indicates that
         the position is before/after all the columns in the table.
@@ -332,7 +332,7 @@ module type S = sig
       :  Model.t
       -> _ t
       -> float
-      -> [`Before | `At of Column_id.t | `After] option
+      -> [ `Before | `At of Column_id.t | `After ] option
 
     (** Returns the vertical position one page away from the current focus (above for [dir
         = Prev] or below for [dir = Next]). This can be used to implementing a
