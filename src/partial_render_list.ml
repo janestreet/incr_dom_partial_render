@@ -226,7 +226,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
       let sub_range =
         match%map render_range with
         | Empty -> None
-        | Range (x, y) -> Some (x, y)
+        | Range (x, y) -> Some (Incl x, Incl y)
       in
       Incr.Map.subrange rows sub_range
     in
