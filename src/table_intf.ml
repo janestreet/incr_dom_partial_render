@@ -193,6 +193,7 @@ module type S = sig
       -> unit
       -> t
 
+    val scroll_region : t -> Scroll_region.Id.t
     val id : t -> Table_id.t
     val float_header : t -> Float_type.t
     val float_first_col : t -> Float_type.t
