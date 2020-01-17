@@ -2,13 +2,13 @@ open! Core_kernel
 open! Import
 
 module Cell : sig
-  (* Each cell node is wrapped in a <td> node with the given [attrs] and possibly
+  (* Each cell's nodes are wrapped in a <td> node with the given [attrs] and possibly
      some additional attributes *)
 
   type t =
     { (* [attrs] should not include an [id] attribute, it may be overwritten *)
       attrs : Vdom.Attr.t list
-    ; node : Vdom.Node.t
+    ; nodes : Vdom.Node.t list
     }
 end
 

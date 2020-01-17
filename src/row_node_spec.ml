@@ -4,7 +4,7 @@ open! Import
 module Cell = struct
   type t =
     { attrs : Vdom.Attr.t list
-    ; node : Vdom.Node.t
+    ; nodes : Vdom.Node.t list
     }
 end
 

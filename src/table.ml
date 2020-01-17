@@ -1083,13 +1083,13 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       in
       let cells =
         List.zip_exn cell_html_ids cells
-        |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; node }) ->
+        |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
           let sticky_style = if i = 0 then sticky_style else non_sticky_style in
           let attrs =
             [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
             |> Attrs.merge_classes_and_styles
           in
-          Node.td attrs [ node ])
+          Node.td attrs nodes)
       in
       Node.tr ~key:row_html_id (row_attrs @ [ Attr.id row_html_id ]) cells)
   ;;
