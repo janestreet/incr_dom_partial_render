@@ -339,11 +339,7 @@ module type S = sig
         = Prev] or below for [dir = Next]). This can be used to implementing a
         [page_focus_row] function in multi-table pages. Note that the position returned is
         relative to the top of the page, not the top of the table. *)
-    val page_focus_row_target_position
-      :  Model.t
-      -> _ t
-      -> dir:Focus_dir.t
-      -> float option
+    val page_focus_row_target_position : Model.t -> _ t -> dir:Focus_dir.t -> float option
   end
 
   val set_focus_row : Model.t -> Row_id.t option -> Model.t

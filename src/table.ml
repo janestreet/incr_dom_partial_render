@@ -121,8 +121,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             Sort_spec.compare_rows_if_equal_keys ~cmp_row_id:Row_id.compare b.B.dir
           in
           Comparable.lexicographic
-            [ (fun t1 t2 ->
-                List.compare compare_by_col t1.sort_criteria t2.sort_criteria)
+            [ (fun t1 t2 -> List.compare compare_by_col t1.sort_criteria t2.sort_criteria)
             ; (fun t1 t2 -> compare_if_equal_keys t1.row_id t2.row_id)
             ]
             t1
@@ -137,8 +136,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
     let convert_sort_criteria sort_criteria row_id row =
       Sort_criteria.map sort_criteria ~f:(fun column ->
-        lazy
-          (Option.map (Column.sort_by column) ~f:(fun sort_by -> sort_by row_id row)))
+        lazy (Option.map (Column.sort_by column) ~f:(fun sort_by -> sort_by row_id row)))
     ;;
 
     let sort sort_criteria ~(rows : _ Row_id.Map.t Incr.t) =
@@ -333,10 +331,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let sorted_rows = sort_criteria >>= Key.sort ~rows in
       let measurements =
         let%map visibility_info = m >>| Model.visibility_info in
-        Option.map
-          visibility_info
-          ~f:(fun { Visibility_info.tbody_rect; view_rect; _ } ->
-            { Partial_render_list.Measurements.list_rect = tbody_rect; view_rect })
+        Option.map visibility_info ~f:(fun { Visibility_info.tbody_rect; view_rect; _ } ->
+          { Partial_render_list.Measurements.list_rect = tbody_rect; view_rect })
       in
       let floating_col =
         let%map float_first_col = m >>| Model.float_first_col
@@ -348,8 +344,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let height_cache = m >>| Model.height_cache in
       let column_num_lookup =
         let%map columns = columns in
-        Column_id.Map.of_alist_exn
-          (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
+        Column_id.Map.of_alist_exn (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
       in
       let has_col_groups =
         let%map columns = columns in
@@ -725,19 +720,13 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let%map measurements = Row_view.measurements t.row_view
       and offset, focus_key = page_focus_row_offset_and_focus_key m t ~dir in
       let top_of_table = measurements.list_rect.top in
-      let pos_in_table =
-        Row_view.focus_offset_to_position t.row_view focus_key ~offset
-      in
+      let pos_in_table = Row_view.focus_offset_to_position t.row_view focus_key ~offset in
       top_of_table +. pos_in_table
     ;;
 
     let focus_is_in_scroll_region ?scroll_margin (m : Model.t) (t : _ t) =
-      let row =
-        Option.bind m.focus_row ~f:(row_is_in_scroll_region ?scroll_margin m t)
-      in
-      let col =
-        Option.bind m.focus_col ~f:(col_is_in_scroll_region ?scroll_margin m t)
-      in
+      let row = Option.bind m.focus_row ~f:(row_is_in_scroll_region ?scroll_margin m t) in
+      let col = Option.bind m.focus_col ~f:(col_is_in_scroll_region ?scroll_margin m t) in
       match row, col with
       | None, None -> None
       | None, Some b | Some b, None -> Some b

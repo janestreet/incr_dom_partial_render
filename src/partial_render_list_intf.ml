@@ -177,10 +177,7 @@ module type S = sig
   val measure_heights
     :  _ t
     -> measure_row:(Sort_key.t -> 'm option)
-    -> get_row_height:(prev:'m option
-                       -> curr:'m option
-                       -> next:'m option
-                       -> float option)
+    -> get_row_height:(prev:'m option -> curr:'m option -> next:'m option -> float option)
     -> Height_cache.t
 end
 

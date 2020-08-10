@@ -232,8 +232,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     in
     let min_and_max_key =
       let%map just_keys = just_keys in
-      ( Option.map (Map.min_elt just_keys) ~f:fst
-      , Option.map (Map.max_elt just_keys) ~f:fst )
+      Option.map (Map.min_elt just_keys) ~f:fst, Option.map (Map.max_elt just_keys) ~f:fst
     in
     let height_cache =
       let%map height_guess = height_guess
@@ -262,9 +261,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     match (render_range : _ Interval.t) with
     | Empty -> 0., Heights.height heights
     | Range (min_key, max_key) ->
-      let { Heights.Partition.lt; gt; _ } =
-        Heights.partition heights ~min_key ~max_key
-      in
+      let { Heights.Partition.lt; gt; _ } = Heights.partition heights ~min_key ~max_key in
       Heights.height lt, Heights.height gt
   ;;
 
@@ -298,8 +295,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     Option.value (call_scroll_function t ~key ~f) ~default:`Didn't_scroll
   ;;
 
-  let scroll_to_position_and_into_region ?in_ t ~position ~top_margin ~bottom_margin ~key
-    =
+  let scroll_to_position_and_into_region ?in_ t ~position ~top_margin ~bottom_margin ~key =
     let f =
       Scroll.scroll_to_position_and_into_region
         ?in_
