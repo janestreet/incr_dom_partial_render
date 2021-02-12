@@ -20,7 +20,8 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   end
 
   module Heights = struct
-    include Splay_tree.Make_with_reduction (Sort_key) (Float)
+    include
+      Splay_tree.Make_with_reduction (Sort_key) (Float)
         (struct
           type key = Sort_key.t
           type data = float

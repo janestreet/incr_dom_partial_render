@@ -890,9 +890,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let visibility_info = Extra.update_visibility_info m extra in
       let height_cache = Extra.update_height_cache m extra in
       let col_group_row_height = Extra.update_col_group_row_height m extra in
-      if [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
-      && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
-      && [%compare.equal: int] col_group_row_height m.col_group_row_height
+      if
+        [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
+        && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
+        && [%compare.equal: int] col_group_row_height m.col_group_row_height
       then m
       else { m with visibility_info; height_cache; col_group_row_height }
   ;;
@@ -1176,9 +1177,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let visibility_info = Extra.update_visibility_info m d in
     let height_cache = Extra.update_height_cache m d in
     let col_group_row_height = Extra.update_col_group_row_height m d in
-    if [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
-    && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
-    && [%compare.equal: int] col_group_row_height m.col_group_row_height
+    if
+      [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
+      && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
+      && [%compare.equal: int] col_group_row_height m.col_group_row_height
     then m
     else { m with visibility_info; height_cache; col_group_row_height }
   ;;
