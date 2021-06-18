@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 (** [Sort_key] determines what values the rows are sorted on. *)

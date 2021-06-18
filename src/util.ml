@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 open Js_of_ocaml
 
