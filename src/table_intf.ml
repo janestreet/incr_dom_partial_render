@@ -358,12 +358,13 @@ module type S = sig
       The input render_row should render <tr> nodes, and attrs should be a list of Vdom
       attributes for the table.  *)
   val create
-    :  ?override_header_on_click:(Column_id.t -> Dom_html.mouseEvent Js.t -> Vdom.Event.t)
+    :  ?override_header_on_click:
+      (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> old_model:Model.t option Incr.t
     (** old_model can be set to None if the previous model did not exist or was in an
         error state. *)
-    -> inject:(Action.t -> Vdom.Event.t)
+    -> inject:(Action.t -> unit Vdom.Effect.t)
     -> rows:'row Row_id.Map.t Incr.t
     -> columns:(Column_id.t * 'row Column.t) list Incr.t
     (** This is a list and not a map so the app can decide order *)
@@ -383,11 +384,12 @@ module type S = sig
   (** Returns a full partially-rendered <table> node with header. [render_row] function
       should render <tr> nodes. *)
   val view
-    :  ?override_header_on_click:(Column_id.t -> Dom_html.mouseEvent Js.t -> Vdom.Event.t)
+    :  ?override_header_on_click:
+      (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> 'a Extra.t Incr.t
     -> render_row:'a row_renderer
-    -> inject:(Action.t -> Vdom.Event.t)
+    -> inject:(Action.t -> unit Vdom.Effect.t)
     -> attrs:Vdom.Attr.t list
     -> Vdom.Node.t Incr.t
 end
