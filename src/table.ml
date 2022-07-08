@@ -148,10 +148,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         ~init:Map.empty
         ~add:(fun ~key:row_id ~data acc ->
           let key = create_key row_id data in
-          Map.set acc ~key ~data)
+          Core.Map.set acc ~key ~data)
         ~remove:(fun ~key:row_id ~data acc ->
           let key = create_key row_id data in
-          Map.remove acc key)
+          Core.Map.remove acc key)
     ;;
   end
 
@@ -377,14 +377,14 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
     let current_key (t : _ t) ~row_id =
       let open Option.Let_syntax in
-      let%map row = Row_id.Map.find t.rows row_id in
+      let%map row = Map.find (t.rows : _ Row_id.Map.t) row_id in
       let sort_criteria = Key.convert_sort_criteria t.sort_criteria row_id row in
       Key.create sort_criteria row_id
     ;;
 
     let visible_rows t =
       Row_view.rows_to_render t.row_view
-      |> Row_view.Sort_key.Map.keys
+      |> Map.keys
       |> List.map ~f:Row_view.Sort_key.row_id
     ;;
 
