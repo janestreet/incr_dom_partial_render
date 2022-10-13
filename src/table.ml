@@ -83,6 +83,11 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     [@@deriving compare, sexp, fields]
   end
 
+  (* Core.List.compare doesn't check its arguments for physical equality, so override that here. *)
+  let short_circuiting_list_compare f a b =
+    if phys_equal a b then 0 else List.compare f a b
+  ;;
+
   module Key = struct
     module T = struct
       type t =
@@ -93,6 +98,19 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
       let sort_keys t = List.map t.sort_criteria ~f:Sort_criteria.By_column.column
       let sort_dirs t = List.map t.sort_criteria ~f:Sort_criteria.By_column.dir
+
+      module B = Sort_criteria.By_column
+
+      let compare_by_col b1 b2 =
+        match Sort_dir.compare b1.B.dir b2.B.dir with
+        | 0 ->
+          (match force b1.B.column, force b2.B.column with
+           | None, None -> 0
+           | Some _, None -> -1
+           | None, Some _ -> 1
+           | Some k1, Some k2 -> Sort_spec.compare_keys b1.B.dir k1 k2)
+        | other -> other
+      ;;
 
       (** The comparison function here is written so that any two keys with the same
           sort_dir sort according to that sort_dir; but keys with different sort_dirs just
@@ -105,27 +123,19 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         | _ :: _, [] -> -1
         | [], _ :: _ -> 1
         | b :: _, _ :: _ ->
-          let module B = Sort_criteria.By_column in
-          let compare_by_col =
-            Comparable.lexicographic
-              [ (fun b1 b2 -> Sort_dir.compare b1.B.dir b2.B.dir)
-              ; (fun b1 b2 ->
-                   match force b1.B.column, force b2.B.column with
-                   | None, None -> 0
-                   | Some _, None -> -1
-                   | None, Some _ -> 1
-                   | Some k1, Some k2 -> Sort_spec.compare_keys b1.B.dir k1 k2)
-              ]
-          in
-          let compare_if_equal_keys =
-            Sort_spec.compare_rows_if_equal_keys ~cmp_row_id:Row_id.compare b.B.dir
-          in
-          Comparable.lexicographic
-            [ (fun t1 t2 -> List.compare compare_by_col t1.sort_criteria t2.sort_criteria)
-            ; (fun t1 t2 -> compare_if_equal_keys t1.row_id t2.row_id)
-            ]
-            t1
-            t2
+          (match
+             short_circuiting_list_compare
+               compare_by_col
+               t1.sort_criteria
+               t2.sort_criteria
+           with
+           | 0 ->
+             Sort_spec.compare_rows_if_equal_keys
+               ~cmp_row_id:Row_id.compare
+               b.B.dir
+               t1.row_id
+               t2.row_id
+           | other -> other)
       ;;
 
       let create sort_criteria row_id = { sort_criteria; row_id }
@@ -145,6 +155,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       in
       Incr.Map.unordered_fold
         rows
+        ~instrumentation:(instrument "sort")
         ~init:Map.empty
         ~add:(fun ~key:row_id ~data acc ->
           let key = create_key row_id data in
@@ -328,11 +339,28 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           List.find_map columns ~f:(fun (id, c) ->
             if [%compare.equal: Column_id.t] id column_id then Some c else None))
       in
-      let sorted_rows = sort_criteria >>= Key.sort ~rows in
+      let height_cache = m >>| Model.height_cache in
+      let column_num_lookup =
+        let%map columns = columns in
+        Column_id.Map.of_alist_exn (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
+      in
       let measurements =
         let%map visibility_info = m >>| Model.visibility_info in
         Option.map visibility_info ~f:(fun { Visibility_info.tbody_rect; view_rect; _ } ->
           { Partial_render_list.Measurements.list_rect = tbody_rect; view_rect })
+      in
+      let%pattern_bind sorted_rows, row_view =
+        (* Putting a bunch of work underneath a bind seems like it ought to be avoided
+           because it causes the graph underneath the bind to be recomputed from scratch
+           every time the bind fires. However, because changing the sort_criteria will
+           cause the sorted map to be completely different, re-using the old incremental
+           graph is even worse: every [Incr_map] function gets a fresh (and completely
+           different) map as its input, causing it to diff and run the unordered-fold
+           functions for every kv-pair in both maps. *)
+        let%bind sort_criteria = sort_criteria in
+        let sorted_rows = Key.sort sort_criteria ~rows in
+        let row_view = Row_view.create ~rows:sorted_rows ~height_cache ~measurements in
+        Incr.both sorted_rows row_view
       in
       let floating_col =
         let%map float_first_col = m >>| Model.float_first_col
@@ -340,11 +368,6 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         if Float_type.is_floating float_first_col
         then Option.map (List.hd columns) ~f:fst
         else None
-      in
-      let height_cache = m >>| Model.height_cache in
-      let column_num_lookup =
-        let%map columns = columns in
-        Column_id.Map.of_alist_exn (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
       in
       let has_col_groups =
         let%map columns = columns in
@@ -354,7 +377,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         let%map columns = columns in
         Int.Map.of_alist_exn (List.mapi columns ~f:(fun i col -> i, col))
       in
-      let%map row_view = Row_view.create ~rows:sorted_rows ~height_cache ~measurements
+      let%map row_view = row_view
       and rows = rows
       and sorted_rows = sorted_rows
       and columns = columns
@@ -1063,6 +1086,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let rows_to_render_with_html_ids =
       Incr.Map.unordered_fold
         (row_view >>| Row_view.rows_to_render)
+        ~instrumentation:(instrument "rows_to_render_with_html_ids")
         ~init:Key.Map.empty
         ~add:(fun ~key ~data:row acc ->
           let row_html_id = Html_id.row table_id key.row_id in
@@ -1074,25 +1098,28 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         ~update:(fun ~key ~old_data:_ ~new_data:row acc ->
           Map.change acc key ~f:(Option.map ~f:(Tuple2.map_snd ~f:(fun _ -> row))))
     in
-    Incr.Map.mapi' rows_to_render_with_html_ids ~f:(fun ~key ~data ->
-      let%bind { row_html_id; cell_html_ids } = data >>| fst in
-      let%map { Row_node_spec.row_attrs; cells } =
-        render_row ~row_id:key.row_id ~row:(data >>| snd)
-      in
-      let cells =
-        List.zip_exn cell_html_ids cells
-        |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
-          let sticky_style = if i = 0 then sticky_style else non_sticky_style in
-          let attrs =
-            [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
-            |> Attrs.merge_classes_and_styles
-          in
-          Node.td ~attr:(Attr.many_without_merge attrs) nodes)
-      in
-      Node.tr
-        ~key:row_html_id
-        ~attr:(Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]))
-        cells)
+    Incr.Map.mapi'
+      rows_to_render_with_html_ids
+      ~instrumentation:(instrument "view_rendered_rows")
+      ~f:(fun ~key ~data ->
+        let%bind { row_html_id; cell_html_ids } = data >>| fst in
+        let%map { Row_node_spec.row_attrs; cells } =
+          render_row ~row_id:key.row_id ~row:(data >>| snd)
+        in
+        let cells =
+          List.zip_exn cell_html_ids cells
+          |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
+            let sticky_style = if i = 0 then sticky_style else non_sticky_style in
+            let attrs =
+              [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
+              |> Attrs.merge_classes_and_styles
+            in
+            Node.td ~attr:(Attr.many_without_merge attrs) nodes)
+        in
+        Node.tr
+          ~key:row_html_id
+          ~attr:(Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]))
+          cells)
   ;;
 
   let view ?override_header_on_click m d ~render_row ~inject ~attrs =

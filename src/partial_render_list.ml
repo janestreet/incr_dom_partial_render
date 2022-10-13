@@ -135,18 +135,23 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   ;;
 
   let create ~rows ~height_cache ~measurements =
-    let just_keys =
-      Incr.Map.mapi ~data_equal:(fun _ _ -> true) rows ~f:(fun ~key:_ ~data:_ -> ())
+    let height_guess = height_cache >>| Height_cache.height_guess in
+    let key_to_height_guess =
+      let%bind height_guess = height_guess in
+      Incr.Map.map ~instrumentation:(instrument "key_to_height_guess") rows ~f:(fun _ ->
+        height_guess)
     in
     let row_ids =
       Incr.Map.unordered_fold
-        just_keys
+        key_to_height_guess
+        ~revert_to_init_when_empty:true
+        ~instrumentation:(instrument "row_ids")
         ~init:Row_id.Map.empty
-        ~add:(fun ~key ~data:() map ->
+        ~add:(fun ~key ~data:_ map ->
           let row_id = Sort_key.row_id key in
           let count = Option.value (Map.find map row_id) ~default:0 in
           Map.set map ~key:row_id ~data:(count + 1))
-        ~remove:(fun ~key ~data:() map ->
+        ~remove:(fun ~key ~data:_ map ->
           let row_id = Sort_key.row_id key in
           match Map.find map row_id with
           | None -> assert false
@@ -158,33 +163,40 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     (* Removes elements from the cache that are no longer in the set of all data so it
        doesn't grow monotonically even while rows are removed. *)
     let trimmed_height_cache =
-      Incr.Map.merge
+      Incr.Map.merge_both_some
         row_ids
         (height_cache >>| Height_cache.cache)
+        ~instrumentation:(instrument "trimmed_height_cache")
         (* Efficiency optimization, we don't care if the rows change, only the heights *)
         ~data_equal_left:(fun _ _ -> true)
-        ~f:(fun ~key:_ v ->
-          match v with
-          | `Left _ | `Right _ -> None
-          | `Both (_, h) -> Some h)
+        ~f:(fun ~key:_ _ h -> h)
     in
-    let height_lookup =
-      Incr.Map.Lookup.create
-        trimmed_height_cache
-        ~comparator:Row_id.comparator
-        ~data_equal:Float.equal
-    in
-    let height_guess = height_cache >>| Height_cache.height_guess in
     let row_heights =
-      let%bind height_guess = height_guess in
-      Incr.Map.mapi' just_keys ~data_equal:Unit.equal ~f:(fun ~key ~data:_ ->
-        match%map Incr.Map.Lookup.find height_lookup (Sort_key.row_id key) with
-        | Some height -> height
-        | None -> height_guess)
+      match%pattern_bind trimmed_height_cache >>| Map.length with
+      | 0 -> key_to_height_guess
+      | _ ->
+        let height_lookup =
+          Incr.Map.Lookup.create
+            trimmed_height_cache
+            ~instrumentation:(instrument "height_lookup")
+            ~comparator:Row_id.comparator
+            ~data_equal:Float.equal
+        in
+        Incr.Map.mapi'
+          key_to_height_guess
+          ~instrumentation:(instrument "row_heights")
+          ~data_equal:(fun _ _ -> true)
+          ~f:(fun ~key ~data:height_guess ->
+            let%mapn lookup = Incr.Map.Lookup.find height_lookup (Sort_key.row_id key)
+            and height_guess = height_guess in
+            match lookup with
+            | Some height -> height
+            | None -> height_guess)
     in
     let heights =
       Incr.Map.unordered_fold
         row_heights
+        ~instrumentation:(instrument "heights")
         ~init:Heights.empty
         ~add:(fun ~key ~data acc -> Heights.set acc ~key ~data)
         ~remove:(fun ~key ~data:_ acc -> Heights.remove acc key)
@@ -192,7 +204,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     let visible_range = get_visible_range ~measurements ~heights ~rows in
     let render_range =
       let%map visible_range = visible_range
-      and just_keys = just_keys
+      and key_to_height_guess = key_to_height_guess
       and heights = heights in
       (* Hack to make CSS-based alternating row colours with :nth-of-type(odd) continue to
          work. Ensures that the parity of the number of tr elements before a given element
@@ -214,7 +226,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
       in
       let move start direction amount =
         move start amount (fun x ->
-          Map.closest_key just_keys direction x |> Option.map ~f:fst)
+          Map.closest_key key_to_height_guess direction x |> Option.map ~f:fst)
       in
       match (visible_range : _ Interval.t) with
       | Empty -> Interval.Empty
@@ -229,11 +241,12 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
         | Empty -> None
         | Range (x, y) -> Some (Incl x, Incl y)
       in
-      Incr.Map.subrange rows sub_range
+      Incr.Map.subrange ~instrumentation:(instrument "subrange") rows sub_range
     in
     let min_and_max_key =
-      let%map just_keys = just_keys in
-      Option.map (Map.min_elt just_keys) ~f:fst, Option.map (Map.max_elt just_keys) ~f:fst
+      let%map key_to_height_guess = key_to_height_guess in
+      ( Option.map (Map.min_elt key_to_height_guess) ~f:fst
+      , Option.map (Map.max_elt key_to_height_guess) ~f:fst )
     in
     let height_cache =
       let%map height_guess = height_guess
@@ -328,14 +341,16 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     call_scroll_function t ~key ~f
   ;;
 
-  let update_cache cache ~key height =
+  let update_cache cache ~height_guess ~key height =
     match height with
     | None -> cache
     | Some height ->
       (* Optimization: Don't bother adding measured height to [height_cache] if it
          is approximately equal to the existing height for that key. *)
       let float_approx_equal f1 f2 = Float.(abs (f1 - f2) < 0.001) in
-      if Option.equal float_approx_equal (Map.find cache key) (Some height)
+      if float_approx_equal height height_guess
+      then Map.remove cache key
+      else if Option.equal float_approx_equal (Map.find cache key) (Some height)
       then cache
       else Map.set cache ~key ~data:height
   ;;
@@ -343,7 +358,11 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   let measure_heights_simple t ~measure =
     let cache =
       Map.fold t.rows_to_render ~init:t.height_cache.cache ~f:(fun ~key ~data:_ cache ->
-        update_cache cache ~key:(Sort_key.row_id key) (measure key))
+        update_cache
+          cache
+          ~height_guess:t.height_cache.height_guess
+          ~key:(Sort_key.row_id key)
+          (measure key))
     in
     { t.height_cache with cache }
   ;;
@@ -358,7 +377,12 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     let update_cache cache ~current ~prev ~next =
       match current with
       | None -> cache
-      | Some (key, curr) -> update_cache cache ~key (get_row_height ~prev ~curr ~next)
+      | Some (key, curr) ->
+        update_cache
+          cache
+          ~height_guess:t.height_cache.height_guess
+          ~key
+          (get_row_height ~prev ~curr ~next)
     in
     let cache =
       let { cache; prev; current } =
