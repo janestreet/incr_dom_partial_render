@@ -344,10 +344,26 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         let%map columns = columns in
         Column_id.Map.of_alist_exn (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
       in
-      let measurements =
+      let%pattern_bind is_off_screen, measurements =
         let%map visibility_info = m >>| Model.visibility_info in
-        Option.map visibility_info ~f:(fun { Visibility_info.tbody_rect; view_rect; _ } ->
-          { Partial_render_list.Measurements.list_rect = tbody_rect; view_rect })
+        match visibility_info with
+        | None -> false, None
+        | Some { Visibility_info.tbody_rect; view_rect; _ } ->
+          let is_off_screen =
+            (* the table is offscreen if the top of the table is beyond the bottom of the screen *)
+            tbody_rect.top > view_rect.bottom
+            (* or when the bottom of the table is above the screen *)
+            || tbody_rect.bottom < 0.0
+          in
+          let measurements =
+            { Partial_render_list.Measurements.list_rect = tbody_rect; view_rect }
+          in
+          is_off_screen, Some measurements
+      in
+      let rows =
+        match%pattern_bind is_off_screen with
+        | true -> Incr_map.cutoff rows ~cutoff:Incremental.Cutoff.always
+        | false -> rows
       in
       let%pattern_bind sorted_rows, row_view =
         (* Putting a bunch of work underneath a bind seems like it ought to be avoided

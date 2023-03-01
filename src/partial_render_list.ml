@@ -138,8 +138,11 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     let height_guess = height_cache >>| Height_cache.height_guess in
     let key_to_height_guess =
       let%bind height_guess = height_guess in
-      Incr.Map.map ~instrumentation:(instrument "key_to_height_guess") rows ~f:(fun _ ->
-        height_guess)
+      Incr.Map.map
+        ~data_equal:(fun _ _ -> true)
+        ~instrumentation:(instrument "key_to_height_guess")
+        rows
+        ~f:(fun _ -> height_guess)
     in
     let row_ids =
       Incr.Map.unordered_fold
@@ -349,7 +352,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
          is approximately equal to the existing height for that key. *)
       let float_approx_equal f1 f2 = Float.(abs (f1 - f2) < 0.001) in
       if float_approx_equal height height_guess
-      then Map.remove cache key
+      then if Map.mem cache key then Map.remove cache key else cache
       else if Option.equal float_approx_equal (Map.find cache key) (Some height)
       then cache
       else Map.set cache ~key ~data:height
