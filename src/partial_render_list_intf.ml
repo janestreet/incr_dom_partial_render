@@ -65,7 +65,7 @@ module type S = sig
       rows to have different heights and change height at runtime.
 
       It only caches heights for rows that are currently in the list with a given key, so
-      items will be dropped on changing a filter or sort, but this is only noticable if
+      items will be dropped on changing a filter or sort, but this is only noticeable if
       the height guess is wrong and the user is paying very close attention to consistency
       of scroll positions.
 

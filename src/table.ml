@@ -941,11 +941,12 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     stage (fun height ->
       [ Node.tr
           ~key
-          ~attr:
-            (Attr.many_without_merge
-               [ id_attr
-               ; Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height)))
-               ])
+          ~attrs:
+            [ Attr.many_without_merge
+                [ id_attr
+                ; Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height)))
+                ]
+            ]
           []
       ])
   ;;
@@ -1006,7 +1007,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
                  |> Option.to_list
                in
                Node.span
-                 ~attr:(Attr.many_without_merge indicator_attrs)
+                 ~attrs:[ Attr.many_without_merge indicator_attrs ]
                  [ Node.text (sprintf " %s" indicator) ])
         in
         let sort_direction_classes =
@@ -1031,7 +1032,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           @ [ Attr.style (Css_gen.concat [ sticky_style; data.Column.header_style ]) ]
         in
         Node.th
-          ~attr:(Attr.many_without_merge attrs)
+          ~attrs:[ Attr.many_without_merge attrs ]
           [ data.Column.header; sort_direction_indicator ])
     in
     let group_nodes =
@@ -1059,12 +1060,13 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             | Some s -> [ Node.text s ], "column-group-full"
           in
           Node.th
-            ~attr:
-              (Attr.many_without_merge
-                 ([ Attr.classes [ "column-group"; class_ ]
-                  ; Attr.create "colspan" (Int.to_string (List.length l))
-                  ]
-                  @ sticky_attr))
+            ~attrs:
+              [ Attr.many_without_merge
+                  ([ Attr.classes [ "column-group"; class_ ]
+                   ; Attr.create "colspan" (Int.to_string (List.length l))
+                   ]
+                   @ sticky_attr)
+              ]
             text)
         |> Option.some)
     in
@@ -1081,8 +1083,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     and group_attrs = group_attrs
     and header_attrs = header_attrs in
     [ Option.map group_nodes ~f:(fun n ->
-        Node.tr ~attr:(Attr.many_without_merge group_attrs) n)
-    ; Some (Node.tr ~attr:(Attr.many_without_merge header_attrs) header_nodes)
+        Node.tr ~attrs:[ Attr.many_without_merge group_attrs ] n)
+    ; Some (Node.tr ~attrs:[ Attr.many_without_merge header_attrs ] header_nodes)
     ]
     |> List.filter_opt
   ;;
@@ -1130,11 +1132,11 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
               [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
               |> Attrs.merge_classes_and_styles
             in
-            Node.td ~attr:(Attr.many_without_merge attrs) nodes)
+            Node.td ~attrs:[ Attr.many_without_merge attrs ] nodes)
         in
         Node.tr
           ~key:row_html_id
-          ~attr:(Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]))
+          ~attrs:[ Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]) ]
           cells)
   ;;
 
@@ -1163,16 +1165,17 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos
     and before_height, after_height = Row_view.spacer_heights row_view in
     Node.table
-      ~attr:(Attr.many_without_merge attrs)
+      ~attrs:[ Attr.many_without_merge attrs ]
       [ Node.thead
-          ~attr:
-            (Attr.many_without_merge
-               [ Attr.id (Html_id.thead table_id)
-               ; Attr.style (Css_gen.background_color `Inherit)
-               ])
+          ~attrs:
+            [ Attr.many_without_merge
+                [ Attr.id (Html_id.thead table_id)
+                ; Attr.style (Css_gen.background_color `Inherit)
+                ]
+            ]
           header
       ; Node.tbody
-          ~attr:(Attr.id (Html_id.tbody table_id))
+          ~attrs:[ Attr.id (Html_id.tbody table_id) ]
           (spacer_before before_height
            @ Map.data rendered_rows
            @ spacer_after after_height)
