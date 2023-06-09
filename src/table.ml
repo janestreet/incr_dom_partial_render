@@ -36,8 +36,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
     let filter_map : 'a t -> f:('a -> 'b option) -> 'b t =
       fun t ~f ->
-        List.filter_map t ~f:(fun (by_column : _ By_column.t) ->
-          Option.map (f by_column.column) ~f:(fun column -> { by_column with column }))
+      List.filter_map t ~f:(fun (by_column : _ By_column.t) ->
+        Option.map (f by_column.column) ~f:(fun column -> { by_column with column }))
     ;;
   end
 
