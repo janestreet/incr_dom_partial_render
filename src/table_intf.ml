@@ -382,7 +382,12 @@ module type S = sig
   val update_visibility : Model.t -> _ Extra.t -> Model.t
 
   (** Returns a full partially-rendered <table> node with header. [render_row] function
-      should render <tr> nodes. *)
+      should render <tr> nodes.
+
+      We set z-indexes using inline styles for proper rendering. You can set your own
+      values for these by providing css variable values (search for `z_index_name` to see
+      this in the ml file.)
+  *)
   val view
     :  ?override_header_on_click:
       (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)

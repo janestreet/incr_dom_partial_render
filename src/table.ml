@@ -954,28 +954,52 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
   let sticky_pos (pos : Float_type.t Incr.t) = pos >>| Float_type.px_from_edge
   let finalize_sticky_pos sticky_pos = Option.map sticky_pos ~f:(fun pos -> `Px pos)
 
-  let sticky_style ?left_sticky_pos ?top_sticky_pos ~z_index:z_ndx () =
+  let sticky_style ?left_sticky_pos ?top_sticky_pos ~z_index_name ~z_index_default () =
     let sticky_style =
       match left_sticky_pos, top_sticky_pos with
       | None, None -> Css_gen.empty
       | left, top -> Css_gen.position ?top ?left `Sticky
     in
-    Css_gen.(z_index z_ndx @> sticky_style)
+    Css_gen.(
+      create
+        ~field:"z-index"
+        ~value:[%string "var(--%{z_index_name}, %{z_index_default#Int})"]
+      @> sticky_style)
   ;;
 
   let view_header ?override_on_click ~inject ~columns ~top_sticky_pos ~left_sticky_pos m =
-    let get_sticky_style ~top_sticky_pos =
-      let first_cell = sticky_style ?left_sticky_pos ?top_sticky_pos ~z_index:3 () in
-      let default = sticky_style ?top_sticky_pos ~z_index:2 () in
+    let get_sticky_style ~is_grouped_header ~top_sticky_pos =
+      let first_cell =
+        sticky_style
+          ?left_sticky_pos
+          ?top_sticky_pos
+          ~z_index_name:
+            (if is_grouped_header
+             then "prtable-leftmostgroupedheader-zindex"
+             else "prtable-leftmostheader-zindex")
+          ~z_index_default:3
+          ()
+      in
+      let default =
+        sticky_style
+          ?top_sticky_pos
+          ~z_index_name:
+            (if is_grouped_header
+             then "prtable-groupedheader-zindex"
+             else "prtable-header-zindex")
+          ~z_index_default:2
+          ()
+      in
       first_cell, default
     in
-    let get_sticky_attrs ~top_sticky_pos =
-      let first_cell, default = get_sticky_style ~top_sticky_pos in
+    let get_sticky_attrs ~is_grouped_header ~top_sticky_pos =
+      let first_cell, default = get_sticky_style ~is_grouped_header ~top_sticky_pos in
       Attr.style first_cell, Attr.style default
     in
     let header_nodes =
       let%map sort_criteria = m >>| Model.sort_criteria
       and id = m >>| Model.id
+      and focused_col = m >>| Model.focus_col
       and columns = columns
       and top_sticky_pos =
         match top_sticky_pos with
@@ -985,7 +1009,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           finalize_sticky_pos (Some (px + col_group_row_height))
       in
       let first_cell_sticky_style, default_sticky_style =
-        get_sticky_style ~top_sticky_pos
+        get_sticky_style ~is_grouped_header:false ~top_sticky_pos
       in
       List.mapi (Map.data columns) ~f:(fun i (key, data) ->
         let sticky_style =
@@ -1024,9 +1048,15 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
                 | None -> inject (Action.Sort_column_clicked key))
             ])
         in
+        let col_is_focused =
+          [%compare.equal: Column_id.t option] focused_col (Some key)
+        in
         let attrs =
           [ Attr.id (Html_id.column_header_cell id key)
-          ; Attr.classes ("column-header" :: sort_direction_classes)
+          ; Attr.classes
+              ((if col_is_focused then "focused-col" else "")
+               :: "column-header"
+               :: sort_direction_classes)
           ]
           @ on_click
           @ [ Attr.style (Css_gen.concat [ sticky_style; data.Column.header_style ]) ]
@@ -1038,7 +1068,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let group_nodes =
       let top_sticky_pos = finalize_sticky_pos top_sticky_pos in
       let first_cell_sticky_attr, default_sticky_attr =
-        get_sticky_attrs ~top_sticky_pos
+        get_sticky_attrs ~is_grouped_header:true ~top_sticky_pos
       in
       let%map columns = columns in
       let groups = List.map (Map.data columns) ~f:(fun c -> (snd c).Column.group) in
@@ -1095,8 +1125,16 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     }
 
   let view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos =
-    let non_sticky_style = sticky_style ~z_index:1 () in
-    let sticky_style = sticky_style ?left_sticky_pos ~z_index:2 () in
+    let non_sticky_style =
+      sticky_style ~z_index_name:"prtable-cell-zindex" ~z_index_default:1 ()
+    in
+    let sticky_style =
+      sticky_style
+        ?left_sticky_pos
+        ~z_index_name:"prtable-leftmostcell-zindex"
+        ~z_index_default:2
+        ()
+    in
     let%bind column_ids = column_ids in
     let column_id_strs = List.map column_ids ~f:Column_id.to_string in
     (* Annotate each row with its html ids - we do this because the string conversions can
@@ -1148,6 +1186,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let%map column_ids = d >>| Extra.columns in
       List.map (Map.data column_ids) ~f:fst
     in
+    let is_single_row_attr =
+      let%map row_count = d >>| fun d -> Map.length (Extra.rows d) in
+      if row_count = 1 then Attr.class_ "single-row" else Attr.empty
+    in
     let row_view = d >>| Extra.row_view in
     let%bind table_id = m >>| Model.id
     and top_sticky_pos = sticky_pos (m >>| Model.float_header)
@@ -1163,7 +1205,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         m
     and rendered_rows =
       view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos
-    and before_height, after_height = Row_view.spacer_heights row_view in
+    and before_height, after_height = Row_view.spacer_heights row_view
+    and is_single_row_attr = is_single_row_attr in
     Node.table
       ~attrs:[ Attr.many_without_merge attrs ]
       [ Node.thead
@@ -1175,7 +1218,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             ]
           header
       ; Node.tbody
-          ~attrs:[ Attr.id (Html_id.tbody table_id) ]
+          ~attrs:[ Attr.id (Html_id.tbody table_id); is_single_row_attr ]
           (spacer_before before_height
            @ Map.data rendered_rows
            @ spacer_after after_height)
