@@ -23,7 +23,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         { column : 'a
         ; dir : Sort_dir.t
         }
-      [@@deriving fields, compare, sexp]
+      [@@deriving fields ~getters, compare, sexp]
     end
 
     type 'a t = 'a By_column.t list [@@deriving compare, sexp]
@@ -66,7 +66,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       ; group : string option
       ; sort_by : (Row_id.t -> 'a -> Sort_key.t) option
       }
-    [@@deriving fields]
+    [@@deriving fields ~getters]
 
     let create ?group ?sort_by ?(header_style = Css_gen.empty) ~header () =
       { header; header_style; group; sort_by }
@@ -80,7 +80,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       { tbody_rect : float Js_misc.Rect.t
       ; view_rect : float Js_misc.Rect.t
       }
-    [@@deriving compare, sexp, fields]
+    [@@deriving compare, sexp, fields ~getters]
   end
 
   (* Core.List.compare doesn't check its arguments for physical equality, so override that here. *)
@@ -94,7 +94,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         { sort_criteria : Sort_key.t option Lazy.t Sort_criteria.t
         ; row_id : Row_id.t
         }
-      [@@deriving sexp, fields]
+      [@@deriving sexp, fields ~getters]
 
       let sort_keys t = List.map t.sort_criteria ~f:Sort_criteria.By_column.column
       let sort_dirs t = List.map t.sort_criteria ~f:Sort_criteria.By_column.dir
@@ -215,7 +215,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       ; column_group_html_id : Html_id.t
       ; column_header_html_id : Html_id.t
       }
-    [@@deriving fields, compare, sexp_of]
+    [@@deriving fields ~getters ~fields, compare, sexp_of]
 
     let create
           ~scroll_margin
@@ -317,7 +317,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       ; has_col_groups : bool
       ; floating_col : Column_id.t option
       }
-    [@@deriving fields]
+    [@@deriving fields ~getters]
   end
 
   module Extra = struct

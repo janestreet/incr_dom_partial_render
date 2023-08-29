@@ -98,7 +98,7 @@ module type S = sig
         { column : 'a
         ; dir : Sort_dir.t
         }
-      [@@deriving fields, compare, sexp]
+      [@@deriving compare, sexp]
     end
 
     type 'a t = 'a By_column.t list [@@deriving compare, sexp]

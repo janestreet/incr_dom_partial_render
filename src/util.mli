@@ -16,7 +16,7 @@ module Margin : sig
     ; bottom : float
     ; right : float
     }
-  [@@deriving fields, compare, sexp_of]
+  [@@deriving compare, sexp_of]
 
   val none : t
   val uniform : float -> t

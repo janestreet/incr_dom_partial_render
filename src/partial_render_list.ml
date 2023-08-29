@@ -13,7 +13,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
       { cache : float Row_id.Map.t
       ; height_guess : float
       }
-    [@@deriving fields, compare, sexp_of]
+    [@@deriving fields ~getters, compare, sexp_of]
 
     let empty ~height_guess = { cache = Row_id.Map.empty; height_guess }
     let height t row_id = Option.value (Map.find t.cache row_id) ~default:t.height_guess
@@ -65,7 +65,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     ; min_key : Sort_key.t option
     ; max_key : Sort_key.t option
     }
-  [@@deriving fields]
+  [@@deriving fields ~getters]
 
   (** How many extra rows will be rendered outside of visible range. Must be even to
       preserve parity for alternating row colours. *)

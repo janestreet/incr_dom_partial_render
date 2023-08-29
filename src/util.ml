@@ -16,7 +16,7 @@ module Margin = struct
     ; bottom : float
     ; right : float
     }
-  [@@deriving fields, compare, sexp_of]
+  [@@deriving compare, sexp_of]
 
   let uniform margin = { top = margin; left = margin; bottom = margin; right = margin }
   let none = uniform 0.
