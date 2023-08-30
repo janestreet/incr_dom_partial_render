@@ -128,13 +128,13 @@ module type S = sig
 
     val create
       :  ?group:string
-      (** optionally render a row above the headers with their group names (similar to
+           (** optionally render a row above the headers with their group names (similar to
           catalog). columns with the same group must be adjacent to be grouped together *)
       -> ?sort_by:(Row_id.t -> 'a -> Sort_key.t)
-      (** used to extract a sortable value for this column from a row. *)
+           (** used to extract a sortable value for this column from a row. *)
       -> ?header_style:Css_gen.t (** Added to the style attribuate of the th node *)
       -> header:Vdom.Node.t
-      (** rendered at the top of the column.
+           (** rendered at the top of the column.
           this node is wrapped in a <th> node with other attributes *)
       -> unit
       -> 'a t
@@ -171,21 +171,21 @@ module type S = sig
 
     val create
       :  scroll_margin:Margin.t
-      (** How far scroll_to and focus moving should keep the row from the [scroll_region] edge *)
+           (** How far scroll_to and focus moving should keep the row from the [scroll_region] edge *)
       -> scroll_region:Scroll_region.Id.t
-      (** Element to scroll in scroll_to and focus moves *)
+           (** Element to scroll in scroll_to and focus moves *)
       -> float_header:Float_type.t
-      (** Whether to float the table header fixed to the top or to a specified position on
+           (** Whether to float the table header fixed to the top or to a specified position on
           scrolling *)
       -> float_first_col:Float_type.t
       -> height_guess:float (** Estimated height of a normal row *)
       -> ?id:Table_id.t
-      (** Id of the table.  This must be a fresh id - one that has not been passed to
+           (** Id of the table.  This must be a fresh id - one that has not been passed to
           [Model.create] before - or behavior is undefined.  It maybe be useful to provide
           your own id here if you need access to the id before you create its associated
           [Model.t]. *)
       -> ?initial_sort:Base_sort_criteria.t
-      (** The column and sort direction that the table should be (initially) sorted by.
+           (** The column and sort direction that the table should be (initially) sorted by.
           Sorting can be changed later via clicking on column headers. If [initial_sort]
           is not specified, then the table is sorted by [Row_id]. *)
       -> ?initial_focus_row:Row_id.t
@@ -236,7 +236,7 @@ module type S = sig
   module Action : sig
     type t =
       | Sort_column_clicked of Column_id.t
-      (** Moves the current focus in a given direction. If there is no focus it focuses
+          (** Moves the current focus in a given direction. If there is no focus it focuses
           the top or bottom row on moving down and up respectively. *)
       | Move_focus_row of Focus_dir.t
       | Move_focus_col of Focus_dir.t
@@ -359,15 +359,15 @@ module type S = sig
       attributes for the table.  *)
   val create
     :  ?override_header_on_click:
-      (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
+         (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> old_model:Model.t option Incr.t
-    (** old_model can be set to None if the previous model did not exist or was in an
+         (** old_model can be set to None if the previous model did not exist or was in an
         error state. *)
     -> inject:(Action.t -> unit Vdom.Effect.t)
     -> rows:'row Row_id.Map.t Incr.t
     -> columns:(Column_id.t * 'row Column.t) list Incr.t
-    (** This is a list and not a map so the app can decide order *)
+         (** This is a list and not a map so the app can decide order *)
     -> render_row:'row row_renderer
     -> attrs:Vdom.Attr.t list
     -> 'row t Incr.t
@@ -390,7 +390,7 @@ module type S = sig
   *)
   val view
     :  ?override_header_on_click:
-      (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
+         (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> 'a Extra.t Incr.t
     -> render_row:'a row_renderer
@@ -416,7 +416,7 @@ module type Table = sig
 
   module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) :
     S
-    with module Row_id = Row_id
-     and module Column_id = Column_id
-     and module Sort_spec = Sort_spec
+      with module Row_id = Row_id
+       and module Column_id = Column_id
+       and module Sort_spec = Sort_spec
 end

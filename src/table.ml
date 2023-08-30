@@ -196,17 +196,17 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
   module Model = struct
     type t =
       { id : Table_id.t
-      (* To avoid DOM id collisions. Never changes. *)
-      (* Settings from client. Never change *)
+          (* To avoid DOM id collisions. Never changes. *)
+          (* Settings from client. Never change *)
       ; float_header : Float_type.t
       ; float_first_col : Float_type.t
       ; scroll_margin : Margin.t
       ; scroll_region : Scroll_region.Id.t
-      (* UI state. Changed by user during app usage *)
+          (* UI state. Changed by user during app usage *)
       ; focus_row : Row_id.t option
       ; focus_col : Column_id.t option
       ; sort_criteria : Base_sort_criteria.t
-      (* Info measured from render. Changes each render. *)
+          (* Info measured from render. Changes each render. *)
       ; height_cache : Row_view.Height_cache.t
       ; visibility_info : Visibility_info.t option
       ; col_group_row_height : int
@@ -218,16 +218,16 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     [@@deriving fields ~getters ~fields, compare, sexp_of]
 
     let create
-          ~scroll_margin
-          ~scroll_region
-          ~float_header
-          ~float_first_col
-          ~height_guess
-          ?id
-          ?(initial_sort = Base_sort_criteria.none)
-          ?initial_focus_row
-          ?initial_focus_col
-          ()
+      ~scroll_margin
+      ~scroll_region
+      ~float_header
+      ~float_first_col
+      ~height_guess
+      ?id
+      ?(initial_sort = Base_sort_criteria.none)
+      ?initial_focus_row
+      ?initial_focus_col
+      ()
       =
       let id =
         match id with
@@ -487,11 +487,11 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ;;
 
     let call_col_scroll_function
-          ?f_if_currently_floating
-          (m : Model.t)
-          ~column_id
-          ~f
-          ~is_floating_col
+      ?f_if_currently_floating
+      (m : Model.t)
+      ~column_id
+      ~f
+      ~is_floating_col
       =
       let open Option.Let_syntax in
       let%map cell_rect =
@@ -551,10 +551,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           ~end_margin:m.scroll_margin.right
       in
       let f_if_currently_floating
-            ~scroll_region_start:_
-            ~scroll_region_end:_
-            ~elem_start:_
-            ~elem_end:_
+        ~scroll_region_start:_
+        ~scroll_region_end:_
+        ~elem_start:_
+        ~elem_end:_
         =
         `Didn't_scroll
       in
@@ -569,11 +569,11 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ;;
 
     let scroll_row_to_position
-          ?keep_in_scroll_region
-          (m : Model.t)
-          (t : _ t)
-          row_id
-          ~position
+      ?keep_in_scroll_region
+      (m : Model.t)
+      (t : _ t)
+      row_id
+      ~position
       =
       let f =
         match keep_in_scroll_region with
@@ -590,18 +590,18 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ;;
 
     let scroll_col_to_position
-          ?keep_in_scroll_region
-          (m : Model.t)
-          (t : _ t)
-          column_id
-          ~position
+      ?keep_in_scroll_region
+      (m : Model.t)
+      (t : _ t)
+      column_id
+      ~position
       =
       let is_floating_col = is_floating_col t column_id in
       let scroll_to_position
-            ~scroll_region_start
-            ~scroll_region_end:_
-            ~elem_start
-            ~elem_end:_
+        ~scroll_region_start
+        ~scroll_region_end:_
+        ~elem_start
+        ~elem_end:_
         =
         Scroll.scroll_to_position
           ?in_:t.scroll_region
@@ -655,10 +655,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           ~end_margin:scroll_margin.right
       in
       let f_if_currently_floating
-            ~scroll_region_start:_
-            ~scroll_region_end:_
-            ~elem_start:_
-            ~elem_end:_
+        ~scroll_region_start:_
+        ~scroll_region_end:_
+        ~elem_start:_
+        ~elem_end:_
         =
         true
       in
@@ -930,8 +930,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let height_cache = Extra.update_height_cache m extra in
       let col_group_row_height = Extra.update_col_group_row_height m extra in
       if [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
-      && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
-      && [%compare.equal: int] col_group_row_height m.col_group_row_height
+         && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
+         && [%compare.equal: int] col_group_row_height m.col_group_row_height
       then m
       else { m with visibility_info; height_cache; col_group_row_height }
   ;;
@@ -1158,24 +1158,24 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       rows_to_render_with_html_ids
       ~instrumentation:(instrument "view_rendered_rows")
       ~f:(fun ~key ~data ->
-        let%bind { row_html_id; cell_html_ids } = data >>| fst in
-        let%map { Row_node_spec.row_attrs; cells } =
-          render_row ~row_id:key.row_id ~row:(data >>| snd)
-        in
-        let cells =
-          List.zip_exn cell_html_ids cells
-          |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
-            let sticky_style = if i = 0 then sticky_style else non_sticky_style in
-            let attrs =
-              [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
-              |> Attrs.merge_classes_and_styles
-            in
-            Node.td ~attrs:[ Attr.many_without_merge attrs ] nodes)
-        in
-        Node.tr
-          ~key:row_html_id
-          ~attrs:[ Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]) ]
-          cells)
+      let%bind { row_html_id; cell_html_ids } = data >>| fst in
+      let%map { Row_node_spec.row_attrs; cells } =
+        render_row ~row_id:key.row_id ~row:(data >>| snd)
+      in
+      let cells =
+        List.zip_exn cell_html_ids cells
+        |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
+             let sticky_style = if i = 0 then sticky_style else non_sticky_style in
+             let attrs =
+               [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
+               |> Attrs.merge_classes_and_styles
+             in
+             Node.td ~attrs:[ Attr.many_without_merge attrs ] nodes)
+      in
+      Node.tr
+        ~key:row_html_id
+        ~attrs:[ Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]) ]
+        cells)
   ;;
 
   let view ?override_header_on_click m d ~render_row ~inject ~attrs =
@@ -1228,14 +1228,14 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
   type 'a t = (Action.t, Model.t, unit, 'a Extra.t) Component.with_extra
 
   let create
-        ?override_header_on_click
-        model
-        ~old_model
-        ~inject
-        ~rows
-        ~columns
-        ~render_row
-        ~attrs
+    ?override_header_on_click
+    model
+    ~old_model
+    ~inject
+    ~rows
+    ~columns
+    ~render_row
+    ~attrs
     =
     let extra = Extra.create model ~rows ~columns in
     let%map apply_action =
@@ -1280,8 +1280,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let height_cache = Extra.update_height_cache m d in
     let col_group_row_height = Extra.update_col_group_row_height m d in
     if [%compare.equal: Visibility_info.t option] visibility_info m.visibility_info
-    && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
-    && [%compare.equal: int] col_group_row_height m.col_group_row_height
+       && [%compare.equal: Row_view.Height_cache.t] height_cache m.height_cache
+       && [%compare.equal: int] col_group_row_height m.col_group_row_height
     then m
     else { m with visibility_info; height_cache; col_group_row_height }
   ;;

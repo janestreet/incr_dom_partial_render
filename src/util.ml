@@ -121,12 +121,12 @@ module Scroll = struct
   ;;
 
   let adjust_margins
-        ~start_margin
-        ~end_margin
-        ~scroll_region_start
-        ~scroll_region_end
-        ~elem_start
-        ~elem_end
+    ~start_margin
+    ~end_margin
+    ~scroll_region_start
+    ~scroll_region_end
+    ~elem_start
+    ~elem_end
     =
     let unused_viewport_space =
       scroll_region_end -. scroll_region_start -. (elem_end -. elem_start)
@@ -151,14 +151,14 @@ module Scroll = struct
   ;;
 
   let scroll_into_region
-        ?in_
-        dir
-        ~start_margin
-        ~end_margin
-        ~scroll_region_start
-        ~scroll_region_end
-        ~elem_start
-        ~elem_end
+    ?in_
+    dir
+    ~start_margin
+    ~end_margin
+    ~scroll_region_start
+    ~scroll_region_end
+    ~elem_start
+    ~elem_end
     =
     let start_margin, end_margin =
       adjust_margins
@@ -192,12 +192,12 @@ module Scroll = struct
   ;;
 
   let is_in_region
-        ~start_margin
-        ~end_margin
-        ~scroll_region_start
-        ~scroll_region_end
-        ~elem_start
-        ~elem_end
+    ~start_margin
+    ~end_margin
+    ~scroll_region_start
+    ~scroll_region_end
+    ~elem_start
+    ~elem_end
     =
     let start_margin, end_margin =
       adjust_margins
@@ -222,15 +222,15 @@ module Scroll = struct
   ;;
 
   let scroll_to_position_and_into_region
-        ?in_
-        dir
-        ~position
-        ~start_margin
-        ~end_margin
-        ~scroll_region_start
-        ~scroll_region_end
-        ~elem_start
-        ~elem_end
+    ?in_
+    dir
+    ~position
+    ~start_margin
+    ~end_margin
+    ~scroll_region_start
+    ~scroll_region_end
+    ~elem_start
+    ~elem_end
     =
     let target_elem_start = get_elem_start ~scroll_region_start ~position in
     let shift = elem_start -. target_elem_start in
