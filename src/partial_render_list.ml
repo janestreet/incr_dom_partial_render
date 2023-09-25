@@ -352,7 +352,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
          is approximately equal to the existing height for that key. *)
       let float_approx_equal f1 f2 = Float.(abs (f1 - f2) < 0.001) in
       if float_approx_equal height height_guess
-      then if Map.mem cache key then Map.remove cache key else cache
+      then Map.remove cache key
       else if Option.equal float_approx_equal (Map.find cache key) (Some height)
       then cache
       else Map.set cache ~key ~data:height
