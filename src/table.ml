@@ -257,6 +257,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let set_float_first_col = Field.fset Fields.float_first_col
     let set_float_header = Field.fset Fields.float_header
     let set_scroll_margin = Field.fset Fields.scroll_margin
+    let set_scroll_region = Field.fset Fields.scroll_region
     let set_sort_criteria = Field.fset Fields.sort_criteria
 
     let cycle_sorting ?keep_existing_cols t column_id ~next_dir =
