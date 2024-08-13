@@ -292,8 +292,6 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     [@@deriving sexp, compare, variants]
   end
 
-  type 'a row_renderer = row_id:Row_id.t -> row:'a Incr.t -> Row_node_spec.t Incr.t
-
   let set_focus_row (m : Model.t) row_id =
     if [%compare.equal: Row_id.t option] m.focus_row row_id
     then m
@@ -320,6 +318,9 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       }
     [@@deriving fields ~getters]
   end
+
+  type 'a row_renderer =
+    row_id:Row_id.t -> row:'a Incr.t -> 'a Extra_model.t Incr.t -> Row_node_spec.t Incr.t
 
   module Extra = struct
     include Extra_model
@@ -843,8 +844,12 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           and column_header = Dom_html.getElementById_opt (Html_id.column_header m.id) in
           (* We don't use [Js_misc.viewport_rect_of_element] here so that we can round down
              instead of rounding to the nearest interger. This reduces jitter. *)
-          let column_group_top = column_group##getBoundingClientRect##.top in
-          let column_header_top = column_header##getBoundingClientRect##.top in
+          let column_group_top =
+            Js.float_of_number column_group##getBoundingClientRect##.top
+          in
+          let column_header_top =
+            Js.float_of_number column_header##getBoundingClientRect##.top
+          in
           int_of_float (column_header_top -. column_group_top)
       in
       Option.value height ~default:0
@@ -1021,10 +1026,10 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         in
         let sort_direction_indicator =
           match precedence_and_dir with
-          | None -> Node.none
+          | None -> Node.none_deprecated [@alert "-deprecated"]
           | Some (precedence, dir) ->
             (match Sort_dir.indicator dir ~precedence with
-             | None -> Node.none
+             | None -> Node.none_deprecated [@alert "-deprecated"]
              | Some indicator ->
                let indicator_attrs =
                  Sort_dir.indicator_class dir ~precedence
@@ -1125,7 +1130,14 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ; cell_html_ids : Html_id.t list
     }
 
-  let view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos =
+  let view_rendered_rows
+    ~table_id
+    ~column_ids
+    ~row_view
+    ~render_row
+    ~left_sticky_pos
+    extra
+    =
     let non_sticky_style =
       sticky_style ~z_index_name:"prtable-cell-zindex" ~z_index_default:1 ()
     in
@@ -1159,24 +1171,24 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       rows_to_render_with_html_ids
       ~instrumentation:(instrument "view_rendered_rows")
       ~f:(fun ~key ~data ->
-      let%bind { row_html_id; cell_html_ids } = data >>| fst in
-      let%map { Row_node_spec.row_attrs; cells } =
-        render_row ~row_id:key.row_id ~row:(data >>| snd)
-      in
-      let cells =
-        List.zip_exn cell_html_ids cells
-        |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
-             let sticky_style = if i = 0 then sticky_style else non_sticky_style in
-             let attrs =
-               [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
-               |> Attrs.merge_classes_and_styles
-             in
-             Node.td ~attrs:[ Attr.many_without_merge attrs ] nodes)
-      in
-      Node.tr
-        ~key:row_html_id
-        ~attrs:[ Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]) ]
-        cells)
+        let%bind { row_html_id; cell_html_ids } = data >>| fst in
+        let%map { Row_node_spec.row_attrs; cells } =
+          render_row ~row_id:key.row_id ~row:(data >>| snd) extra
+        in
+        let cells =
+          List.zip_exn cell_html_ids cells
+          |> List.mapi ~f:(fun i (cell_html_id, { Row_node_spec.Cell.attrs; nodes }) ->
+            let sticky_style = if i = 0 then sticky_style else non_sticky_style in
+            let attrs =
+              [ Attr.style sticky_style; Attr.id cell_html_id ] @ attrs
+              |> Attrs.merge_classes_and_styles
+            in
+            Node.td ~attrs:[ Attr.many_without_merge attrs ] nodes)
+        in
+        Node.tr
+          ~key:row_html_id
+          ~attrs:[ Attr.many_without_merge (row_attrs @ [ Attr.id row_html_id ]) ]
+          cells)
   ;;
 
   let view ?override_header_on_click m d ~render_row ~inject ~attrs =
@@ -1205,7 +1217,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         ~left_sticky_pos
         m
     and rendered_rows =
-      view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos
+      view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos d
     and before_height, after_height = Row_view.spacer_heights row_view
     and is_single_row_attr = is_single_row_attr in
     Node.table

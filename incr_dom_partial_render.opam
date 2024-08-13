@@ -11,7 +11,10 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
+  "core"
   "incr_dom"
+  "incr_map"
+  "incremental"
   "ppx_jane"
   "ppx_pattern_bind"
   "splay_tree"

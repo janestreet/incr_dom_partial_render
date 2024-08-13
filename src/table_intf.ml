@@ -237,7 +237,7 @@ module type S = sig
   module Action : sig
     type t =
       | Sort_column_clicked of Column_id.t
-          (** Moves the current focus in a given direction. If there is no focus it focuses
+      (** Moves the current focus in a given direction. If there is no focus it focuses
           the top or bottom row on moving down and up respectively. *)
       | Move_focus_row of Focus_dir.t
       | Move_focus_col of Focus_dir.t
@@ -349,7 +349,8 @@ module type S = sig
   (** When constructing the row [Vdom.Node.t] (most likely using function [Vdom.Node.tr]),
       it is important to pass in the argument [~key:id]. Otherwise scrolling may have
       unexpected behavior. *)
-  type 'a row_renderer = row_id:Row_id.t -> row:'a Incr.t -> Row_node_spec.t Incr.t
+  type 'a row_renderer =
+    row_id:Row_id.t -> row:'a Incr.t -> 'a Extra.t Incr.t -> Row_node_spec.t Incr.t
 
   type 'row t = (Action.t, Model.t, unit, 'row Extra.t) Component.with_extra
 
@@ -417,7 +418,7 @@ module type Table = sig
 
   module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) :
     S
-      with module Row_id = Row_id
-       and module Column_id = Column_id
-       and module Sort_spec = Sort_spec
+    with module Row_id = Row_id
+     and module Column_id = Column_id
+     and module Sort_spec = Sort_spec
 end
