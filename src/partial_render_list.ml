@@ -100,9 +100,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     ~(heights : Heights.t Incr.t)
     ~(rows : _ Sort_key.Map.t Incr.t)
     =
-    let%map measurements = measurements
-    and heights = heights
-    and rows = rows in
+    let%map measurements and heights and rows in
     match measurements with
     | None -> Interval.Empty
     | Some { list_rect; view_rect } ->
@@ -137,7 +135,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   let create ~rows ~height_cache ~measurements =
     let height_guess = height_cache >>| Height_cache.height_guess in
     let key_to_height_guess =
-      let%bind height_guess = height_guess in
+      let%bind height_guess in
       Incr.Map.map
         ~data_equal:(fun _ _ -> true)
         ~instrumentation:(instrument "key_to_height_guess")
@@ -191,7 +189,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
           ~data_equal:(fun _ _ -> true)
           ~f:(fun ~key ~data:height_guess ->
             let%mapn lookup = Incr.Map.Lookup.find height_lookup (Sort_key.row_id key)
-            and height_guess = height_guess in
+            and height_guess in
             match lookup with
             | Some height -> height
             | None -> height_guess)
@@ -206,9 +204,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     in
     let visible_range = get_visible_range ~measurements ~heights ~rows in
     let render_range =
-      let%map visible_range = visible_range
-      and key_to_height_guess = key_to_height_guess
-      and heights = heights in
+      let%map visible_range and key_to_height_guess and heights in
       (* Hack to make CSS-based alternating row colours with :nth-of-type(odd) continue to
          work. Ensures that the parity of the number of tr elements before a given element
          is preserved even with partial rendering by sometimes rendering an extra element.
@@ -247,20 +243,19 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
       Incr.Map.subrange ~instrumentation:(instrument "subrange") rows sub_range
     in
     let min_and_max_key =
-      let%map key_to_height_guess = key_to_height_guess in
+      let%map key_to_height_guess in
       ( Option.map (Map.min_elt key_to_height_guess) ~f:fst
       , Option.map (Map.max_elt key_to_height_guess) ~f:fst )
     in
     let height_cache =
-      let%map height_guess = height_guess
-      and trimmed_height_cache = trimmed_height_cache in
+      let%map height_guess and trimmed_height_cache in
       { Height_cache.height_guess; cache = trimmed_height_cache }
     in
-    let%map heights = heights
-    and rows_to_render = rows_to_render
-    and render_range = render_range
-    and height_cache = height_cache
-    and measurements = measurements
+    let%map heights
+    and rows_to_render
+    and render_range
+    and height_cache
+    and measurements
     and min_key, max_key = min_and_max_key in
     { heights
     ; render_range
