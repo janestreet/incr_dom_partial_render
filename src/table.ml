@@ -329,21 +329,21 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let scroll_region =
         (* This needs to fire whenever the model or rows change so that it can actually
            find the element [scroll_region] after it is drawn. *)
-        let%map m = m
+        let%map m
         and _ = rows in
         Scroll_region.of_id (Model.scroll_region m)
       in
       let sort_criteria =
         let%map sort_criteria =
           m >>| Model.sort_criteria |> cutoff [%compare: Base_sort_criteria.t]
-        and columns = columns in
+        and columns in
         Sort_criteria.filter_map sort_criteria ~f:(fun column_id ->
           List.find_map columns ~f:(fun (id, c) ->
             if [%compare.equal: Column_id.t] id column_id then Some c else None))
       in
       let height_cache = m >>| Model.height_cache in
       let column_num_lookup =
-        let%map columns = columns in
+        let%map columns in
         Column_id.Map.of_alist_exn (List.mapi columns ~f:(fun i (col_id, _) -> col_id, i))
       in
       let%pattern_bind is_off_screen, measurements =
@@ -375,35 +375,35 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
            graph is even worse: every [Incr_map] function gets a fresh (and completely
            different) map as its input, causing it to diff and run the unordered-fold
            functions for every kv-pair in both maps. *)
-        let%bind sort_criteria = sort_criteria in
+        let%bind sort_criteria in
         let sorted_rows = Key.sort sort_criteria ~rows in
         let row_view = Row_view.create ~rows:sorted_rows ~height_cache ~measurements in
         Incr.both sorted_rows row_view
       in
       let floating_col =
         let%map float_first_col = m >>| Model.float_first_col
-        and columns = columns in
+        and columns in
         if Float_type.is_floating float_first_col
         then Option.map (List.hd columns) ~f:fst
         else None
       in
       let has_col_groups =
-        let%map columns = columns in
+        let%map columns in
         List.exists columns ~f:(fun (_, col) -> Option.is_some col.group)
       in
       let columns =
-        let%map columns = columns in
+        let%map columns in
         Int.Map.of_alist_exn (List.mapi columns ~f:(fun i col -> i, col))
       in
-      let%map row_view = row_view
-      and rows = rows
-      and sorted_rows = sorted_rows
-      and columns = columns
-      and column_num_lookup = column_num_lookup
-      and sort_criteria = sort_criteria
-      and scroll_region = scroll_region
-      and floating_col = floating_col
-      and has_col_groups = has_col_groups in
+      let%map row_view
+      and rows
+      and sorted_rows
+      and columns
+      and column_num_lookup
+      and sort_criteria
+      and scroll_region
+      and floating_col
+      and has_col_groups in
       { rows
       ; sorted_rows
       ; columns
@@ -886,7 +886,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         | Some _ as a -> a
         | None -> Scroll_region.of_id (Model.scroll_region m)
       in
-      let%map scroll_region = scroll_region
+      let%map scroll_region
       and tbody = Dom_html.getElementById_opt m.tbody_html_id in
       let view_rect =
         match scroll_region with
@@ -902,8 +902,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     and focus_row = model >>| Model.focus_row
     and old_focus_col = old_model >>| Option.map ~f:Model.focus_col
     and focus_col = model >>| Model.focus_col
-    and extra = extra
-    and model = model in
+    and extra
+    and model in
     fun () ->
       if old_focus_row <> Some focus_row || old_focus_col <> Some focus_col
       then (
@@ -916,8 +916,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
   let apply_action m extra =
     let open Extra in
-    let%map m = m
-    and extra = extra in
+    let%map m and extra in
     fun (action : Action.t) ->
       match action with
       | Sort_column_clicked column_id -> sort_column_clicked m column_id
@@ -929,8 +928,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
   ;;
 
   let update_visibility (m : Model.t Incr.t) extra =
-    let%map m = m
-    and extra = extra in
+    let%map m and extra in
     fun ~schedule_action:_ ->
       let visibility_info = Extra.update_visibility_info m extra in
       let height_cache = Extra.update_height_cache m extra in
@@ -1006,7 +1004,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let%map sort_criteria = m >>| Model.sort_criteria
       and id = m >>| Model.id
       and focused_col = m >>| Model.focus_col
-      and columns = columns
+      and columns
       and top_sticky_pos =
         match top_sticky_pos with
         | None -> Incr.return None
@@ -1076,7 +1074,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let first_cell_sticky_attr, default_sticky_attr =
         get_sticky_attrs ~is_grouped_header:true ~top_sticky_pos
       in
-      let%map columns = columns in
+      let%map columns in
       let groups = List.map (Map.data columns) ~f:(fun c -> (snd c).Column.group) in
       if List.for_all groups ~f:Option.is_none
       then None
@@ -1114,10 +1112,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       let%map column_header_html_id = m >>| Model.column_header_html_id in
       [ Attr.id column_header_html_id ]
     in
-    let%map group_nodes = group_nodes
-    and header_nodes = header_nodes
-    and group_attrs = group_attrs
-    and header_attrs = header_attrs in
+    let%map group_nodes and header_nodes and group_attrs and header_attrs in
     [ Option.map group_nodes ~f:(fun n ->
         Node.tr ~attrs:[ Attr.many_without_merge group_attrs ] n)
     ; Some (Node.tr ~attrs:[ Attr.many_without_merge header_attrs ] header_nodes)
@@ -1148,7 +1143,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         ~z_index_default:2
         ()
     in
-    let%bind column_ids = column_ids in
+    let%bind column_ids in
     let column_id_strs = List.map column_ids ~f:Column_id.to_string in
     (* Annotate each row with its html ids - we do this because the string conversions can
        be expensive, and don't need to be re-done every time a row's incremental fires. *)
@@ -1219,7 +1214,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     and rendered_rows =
       view_rendered_rows ~table_id ~column_ids ~row_view ~render_row ~left_sticky_pos d
     and before_height, after_height = Row_view.spacer_heights row_view
-    and is_single_row_attr = is_single_row_attr in
+    and is_single_row_attr in
     Node.table
       ~attrs:[ Attr.many_without_merge attrs ]
       [ Node.thead
@@ -1259,8 +1254,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       fun _ ~schedule_action:_ -> on_display ()
     and update_visibility = update_visibility model extra
     and view = view ?override_header_on_click model extra ~render_row ~inject ~attrs
-    and extra = extra
-    and model = model in
+    and extra
+    and model in
     Component.create_with_extra
       ~on_display
       ~update_visibility
