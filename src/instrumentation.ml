@@ -16,6 +16,12 @@ let () =
 
 let instrument name =
   { Incr.Map.Instrumentation.f =
-      (fun f -> if !is_profiling then Javascript_profiling.record name ~f else f ())
+      (fun f ->
+        if !is_profiling
+        then (
+          let r, measurement = Javascript_profiling.Timer.record f in
+          Javascript_profiling.measure name measurement;
+          r)
+        else f ())
   }
 ;;

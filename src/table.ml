@@ -63,13 +63,21 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     type 'a t =
       { header : Node.t
       ; header_style : Css_gen.t
+      ; header_attrs : Attr.t list
       ; group : string option
       ; sort_by : (Row_id.t -> 'a -> Sort_key.t) option
       }
     [@@deriving fields ~getters]
 
-    let create ?group ?sort_by ?(header_style = Css_gen.empty) ~header () =
-      { header; header_style; group; sort_by }
+    let create
+      ?group
+      ?sort_by
+      ?(header_style = Css_gen.empty)
+      ?(header_attrs = [])
+      ~header
+      ()
+      =
+      { header; header_style; header_attrs; group; sort_by }
     ;;
   end
 
@@ -1066,7 +1074,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           @ [ Attr.style (Css_gen.concat [ sticky_style; data.Column.header_style ]) ]
         in
         Node.th
-          ~attrs:[ Attr.many_without_merge attrs ]
+          ~attrs:([ Attr.many_without_merge attrs ] @ data.Column.header_attrs)
           [ data.Column.header; sort_direction_indicator ])
     in
     let group_nodes =
