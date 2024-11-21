@@ -132,7 +132,8 @@ module type S = sig
           catalog). columns with the same group must be adjacent to be grouped together *)
       -> ?sort_by:(Row_id.t -> 'a -> Sort_key.t)
            (** used to extract a sortable value for this column from a row. *)
-      -> ?header_style:Css_gen.t (** Added to the style attribuate of the th node *)
+      -> ?header_style:Css_gen.t (** Prefer header_attrs over this *)
+      -> ?header_attrs:Vdom.Attr.t list (** Added to the th node *)
       -> header:Vdom.Node.t
            (** rendered at the top of the column.
           this node is wrapped in a <th> node with other attributes *)
@@ -361,7 +362,7 @@ module type S = sig
       attributes for the table.  *)
   val create
     :  ?override_header_on_click:
-         (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
+         (Column_id.t -> Js_of_ocaml.Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> old_model:Model.t option Incr.t
          (** old_model can be set to None if the previous model did not exist or was in an
@@ -392,7 +393,7 @@ module type S = sig
   *)
   val view
     :  ?override_header_on_click:
-         (Column_id.t -> Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
+         (Column_id.t -> Js_of_ocaml.Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> 'a Extra.t Incr.t
     -> render_row:'a row_renderer
