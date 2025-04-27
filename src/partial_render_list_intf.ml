@@ -26,12 +26,11 @@ end
 (** [Row_id.t] is used to uniquely identify rows, while [Sort_key.t] is used to sort them.
 
     If the order of your rows frequently changes, you can use [Row_id.t] to uniquely
-    identify a row even as its [Sort_key.t] value changes.
-    This is useful for preserving the measured heights in [Height_cache] as row values
-    change, causing rows to get reordered.
+    identify a row even as its [Sort_key.t] value changes. This is useful for preserving
+    the measured heights in [Height_cache] as row values change, causing rows to get
+    reordered.
 
-    In simple cases, [Row_id] and [Sort_key] can be the same (use [Make_simple] for this).
-*)
+    In simple cases, [Row_id] and [Sort_key] can be the same (use [Make_simple] for this). *)
 
 module type Row_id = Key
 
@@ -54,15 +53,14 @@ end
     Because of the height cache your rows don't all have to be the same height. It is fine
     if some rows have more data or the editing UI is taller than a display row.
 
-    See lib/incr_dom/examples/ts_gui for a demonstration of how to use of this module.
-*)
+    See lib/incr_dom/examples/ts_gui for a demonstration of how to use of this module. *)
 module type S = sig
   module Row_id : Key
   module Sort_key : Key
 
-  (** Height_cache keeps track of the rendered height of items so that scrolling
-      to a given position can decide which elements to render accurately. This allows
-      rows to have different heights and change height at runtime.
+  (** Height_cache keeps track of the rendered height of items so that scrolling to a
+      given position can decide which elements to render accurately. This allows rows to
+      have different heights and change height at runtime.
 
       It only caches heights for rows that are currently in the list with a given key, so
       items will be dropped on changing a filter or sort, but this is only noticeable if
@@ -73,8 +71,7 @@ module type S = sig
       that is not in the cache. Rows that are measured to be exactly [height_guess] tall
       will not even be added to the cache. If most of your rows are a certain size you
       should determine the exact height returned to [measure_heights] in the typical case
-      and use that as your guess.
-  *)
+      and use that as your guess. *)
   module Height_cache : sig
     type t [@@deriving compare, sexp_of]
 
@@ -155,10 +152,8 @@ module type S = sig
 
   (** [measure_heights_simple] updates a height cache by measuring the rendered elements,
       relying on the app to provide a function for finding and measuring the element for a
-      given key.
-      This function can be used for table with collapsed borders and box sizing set to
-      border-box.
-  *)
+      given key. This function can be used for table with collapsed borders and box sizing
+      set to border-box. *)
   val measure_heights_simple
     :  _ t
     -> measure:(Sort_key.t -> float option)
@@ -167,13 +162,11 @@ module type S = sig
   (** [measure_heights] is like [measure_heights_simple], but allows the app to use the
       previous and next rows in addition to the current row to measure the current row's
       height (e.g. using the bottom position of the previous row and/or the top position
-      of the next row).
-      To avoid retaking the same measures three times for each row (once as the "previous"
-      row, once as the "current" row, and once as the "next" row), [measure_row] allows
-      the app to specify what measurements to take for a given row, and it is called
-      exactly once per row.
-      This function should be used for tables with non-collapsed borders.
-  *)
+      of the next row). To avoid retaking the same measures three times for each row (once
+      as the "previous" row, once as the "current" row, and once as the "next" row),
+      [measure_row] allows the app to specify what measurements to take for a given row,
+      and it is called exactly once per row. This function should be used for tables with
+      non-collapsed borders. *)
   val measure_heights
     :  _ t
     -> measure_row:(Sort_key.t -> 'm option)

@@ -107,16 +107,19 @@ module Scroll = struct
       | Vertical
   end
 
+  let number = Js_of_ocaml.Js.number_of_float
+  let float = Js_of_ocaml.Js.float_of_number
+
   let scroll ?(in_ = Scroll_region.Window) (dir : Dir.t) shift =
-    if Float.equal shift 0.
+    if [%equal: float] shift 0.
     then `Didn't_scroll
     else (
-      let shift = Float.iround_nearest_exn shift in
       (match in_, dir with
-       | Window, Horizontal -> Dom_html.window##scrollBy shift 0
-       | Window, Vertical -> Dom_html.window##scrollBy 0 shift
-       | Element el, Horizontal -> el##.scrollLeft := el##.scrollLeft + shift
-       | Element el, Vertical -> el##.scrollTop := el##.scrollTop + shift);
+       | Window, Horizontal -> Dom_html.window##scrollBy (number shift) (number 0.)
+       | Window, Vertical -> Dom_html.window##scrollBy (number 0.) (number shift)
+       | Element el, Horizontal ->
+         el##.scrollLeft := number (float el##.scrollLeft +. shift)
+       | Element el, Vertical -> el##.scrollTop := number (float el##.scrollTop +. shift));
       `Scrolled)
   ;;
 

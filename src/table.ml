@@ -836,7 +836,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
             else `After)
     ;;
 
-    (** returns the element associated with the row id in question  *)
+    (** returns the element associated with the row id in question *)
     let find_row_element table_id row_id =
       Dom_html.getElementById_opt (Html_id.row table_id row_id)
     ;;
