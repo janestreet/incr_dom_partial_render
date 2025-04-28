@@ -47,10 +47,9 @@ module Float_type : sig
   [@@deriving compare, sexp]
 
   (** [compute_offset] computes the extra offset from the edge of the viewport created by
-      having a floating element (header or first column).
-      [get_float_elem_size] is a function that measures the relevant size of the floating
-      element if applicable (height for floating header, width for floating first column).
-  *)
+      having a floating element (header or first column). [get_float_elem_size] is a
+      function that measures the relevant size of the floating element if applicable
+      (height for floating header, width for floating first column). *)
   val compute_offset : t -> get_float_elem_size:(unit -> float option) -> float
 
   val is_floating : t -> bool
@@ -79,8 +78,7 @@ module Scroll : sig
       - in the horizontal direction, "start" means "left" and "end" means "right"
 
       For instance, for [scroll_to_position Horizontal], [scroll_region_start] is the left
-      position of the scroll region and [elem_start] is the left position of the element.
-  *)
+      position of the scroll region and [elem_start] is the left position of the element. *)
 
   (** [scroll_into_region] scrolls the element with position from [elem_start] to
       [elem_end] into the scroll region as specified by [scroll_region_start] and
@@ -103,8 +101,7 @@ module Scroll : sig
 
       In cases where it is not possible to scroll the element to the specified position
       (e.g scrolling an element at the bottom of the page to the top of the viewport), the
-      element is scrolled as close as possible to the given position.
-  *)
+      element is scrolled as close as possible to the given position. *)
   val scroll_to_position
     :  ?in_:Scroll_region.t
     -> Dir.t
@@ -146,11 +143,11 @@ module Scroll : sig
 end
 
 (** [move_focus] gives the next element starting from the given key in the given direction
-    according to the order of elements in the map.
-    If the given key is [None], [move_focus] returns the first element in the map for
-    direction [Next], and the last element in the map for direction [Prev].
-    If the given key is already the last element in the table for direction [Next], or the
-    first element in the table for direction [Prev], then [move_focus] returns [None]. *)
+    according to the order of elements in the map. If the given key is [None],
+    [move_focus] returns the first element in the map for direction [Next], and the last
+    element in the map for direction [Prev]. If the given key is already the last element
+    in the table for direction [Next], or the first element in the table for direction
+    [Prev], then [move_focus] returns [None]. *)
 val move_focus
   :  ('key, 'value, _) Map.t
   -> 'key option

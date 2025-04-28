@@ -7,7 +7,7 @@ module Default_sort_spec : sig
       to this type.
 
       Note that typically, all values will be injected into just one of these variant
-      constructors.  The sorting between different constructors is considered arbitrary. *)
+      constructors. The sorting between different constructors is considered arbitrary. *)
   module Sort_key : sig
     type t =
       | String of string

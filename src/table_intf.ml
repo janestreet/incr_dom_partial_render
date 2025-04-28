@@ -8,16 +8,17 @@ module type Sort_key = sig
   type t [@@deriving sexp, compare]
 end
 
-(** [Sort_dir] determines the different ways in which the rows can be sorted
-    (e.g. ascending and descending). *)
+(** [Sort_dir] determines the different ways in which the rows can be sorted (e.g.
+    ascending and descending). *)
 module type Sort_dir = sig
   type t [@@deriving sexp, compare]
 
-  (** [next] cycles through sort directions. This is used to determine how to
-      update the sort direction when a header is clicked on. *)
+  (** [next] cycles through sort directions. This is used to determine how to update the
+      sort direction when a header is clicked on. *)
   val next : t option -> t option
 
-  (** [indicator], [header_class] and [indicator_class] convert the sort direction and
+  (** {v
+ [indicator], [header_class] and [indicator_class] convert the sort direction and
       precedence of a column from the sort criteria into a string symbol and css classes
       for the header and the indicator respectively in order to display sort information
       in the table.
@@ -34,7 +35,7 @@ module type Sort_dir = sig
       Examples of suitable indicators are:
       - "▲"    (ascending with priority 1)
       - "▲(2)" (ascending with priority 2)
-  *)
+      v} *)
 
   val indicator : t -> precedence:int -> string option
   val header_class : t -> precedence:int -> string option
@@ -54,8 +55,7 @@ module type Sort_spec = sig
 
       [compare_rows_if_equal_keys] compares two rows based on their row ids, and is only
       called if the calls to [compare_key] for all columns in the table's sort criteria
-      return 0. The sort direction is determined by the first column in the sort criteria.
-  *)
+      return 0. The sort direction is determined by the first column in the sort criteria. *)
 
   val compare_keys : Sort_dir.t -> Sort_key.t -> Sort_key.t -> int
 
@@ -81,7 +81,7 @@ module type S = sig
   module Row_id : Id
 
   (** This isn't just an int so that if an app adds columns the sort is maintained
-      properly by the app's own classification instead of index. But it can be an int.*)
+      properly by the app's own classification instead of index. But it can be an int. *)
   module Column_id : Id
 
   module Sort_spec : Sort_spec
@@ -128,15 +128,16 @@ module type S = sig
 
     val create
       :  ?group:string
-           (** optionally render a row above the headers with their group names (similar to
-          catalog). columns with the same group must be adjacent to be grouped together *)
+           (** optionally render a row above the headers with their group names (similar
+               to catalog). columns with the same group must be adjacent to be grouped
+               together *)
       -> ?sort_by:(Row_id.t -> 'a -> Sort_key.t)
            (** used to extract a sortable value for this column from a row. *)
       -> ?header_style:Css_gen.t (** Prefer header_attrs over this *)
       -> ?header_attrs:Vdom.Attr.t list (** Added to the th node *)
       -> header:Vdom.Node.t
-           (** rendered at the top of the column.
-          this node is wrapped in a <th> node with other attributes *)
+           (** rendered at the top of the column. this node is wrapped in a <th> node with
+               other attributes *)
       -> unit
       -> 'a t
 
@@ -172,23 +173,24 @@ module type S = sig
 
     val create
       :  scroll_margin:Margin.t
-           (** How far scroll_to and focus moving should keep the row from the [scroll_region] edge *)
+           (** How far scroll_to and focus moving should keep the row from the
+               [scroll_region] edge *)
       -> scroll_region:Scroll_region.Id.t
            (** Element to scroll in scroll_to and focus moves *)
       -> float_header:Float_type.t
-           (** Whether to float the table header fixed to the top or to a specified position on
-          scrolling *)
+           (** Whether to float the table header fixed to the top or to a specified
+               position on scrolling *)
       -> float_first_col:Float_type.t
       -> height_guess:float (** Estimated height of a normal row *)
       -> ?id:Table_id.t
-           (** Id of the table.  This must be a fresh id - one that has not been passed to
-          [Model.create] before - or behavior is undefined.  It maybe be useful to provide
-          your own id here if you need access to the id before you create its associated
-          [Model.t]. *)
+           (** Id of the table. This must be a fresh id - one that has not been passed to
+               [Model.create] before - or behavior is undefined. It maybe be useful to
+               provide your own id here if you need access to the id before you create its
+               associated [Model.t]. *)
       -> ?initial_sort:Base_sort_criteria.t
-           (** The column and sort direction that the table should be (initially) sorted by.
-          Sorting can be changed later via clicking on column headers. If [initial_sort]
-          is not specified, then the table is sorted by [Row_id]. *)
+           (** The column and sort direction that the table should be (initially) sorted
+               by. Sorting can be changed later via clicking on column headers. If
+               [initial_sort] is not specified, then the table is sorted by [Row_id]. *)
       -> ?initial_focus_row:Row_id.t
       -> ?initial_focus_col:Column_id.t
       -> unit
@@ -221,8 +223,7 @@ module type S = sig
         front of the sort criteria list (i.e. given the highest precedence).
 
         If [keep_existing_cols] is not passed in, all column ids apart from the given one
-        are removed from the sort criteria.
-    *)
+        are removed from the sort criteria. *)
 
     val cycle_sorting
       :  ?keep_existing_cols:unit
@@ -266,7 +267,7 @@ module type S = sig
     (** Functions [scroll_*_into_scroll_region] and [scroll_*_to_position] will always
         work if the row heights in the model are correct (either because the row height
         estimate is correct for all rows, or because all rows have already been rendered
-        and measured).  If the row heights in the model are off, it may take multiple
+        and measured). If the row heights in the model are off, it may take multiple
         iterations of calling the scroll function and then remeasuring row heights in
         [update_visibility] before the specified element is successfully scrolled to its
         target. *)
@@ -303,8 +304,7 @@ module type S = sig
         with the given id), or if the visibility measurements are not yet available.
 
         By default, the model's scroll margin is used to compute the bounds of the scroll
-        region. However, if a [scroll_margin] argument is given, that will be use instead.
-    *)
+        region. However, if a [scroll_margin] argument is given, that will be use instead. *)
 
     val focus_is_in_scroll_region
       :  ?scroll_margin:Margin.t
@@ -314,13 +314,13 @@ module type S = sig
 
     val get_focus_position : Model.t -> _ t -> float option * float option
 
-    (** Returns the bounding client rectangle of the currently focused cell, if any.
-        This only returns a value if both the focus row and focus column are set. *)
+    (** Returns the bounding client rectangle of the currently focused cell, if any. This
+        only returns a value if both the focus row and focus column are set. *)
     val get_focus_rect : Model.t -> _ t -> float Js_misc.Rect.t option
 
     (** Finds the row id at a given vertical position on the page, or indicates that the
-        position is before/after all the rows in the table.
-        It only returns [None] if the model has no visibility info. *)
+        position is before/after all the rows in the table. It only returns [None] if the
+        model has no visibility info. *)
     val find_row_by_position
       :  Model.t
       -> _ t
@@ -328,17 +328,17 @@ module type S = sig
       -> [ `Before | `At of Row_id.t | `After ] option
 
     (** Finds the column id at a given horizontal position on the page, or indicates that
-        the position is before/after all the columns in the table.
-        It only returns [None] if the model has no visibility info or if a call to
-        [Dom_html.getElementById_opt] on a header cell id returns [None]. *)
+        the position is before/after all the columns in the table. It only returns [None]
+        if the model has no visibility info or if a call to [Dom_html.getElementById_opt]
+        on a header cell id returns [None]. *)
     val find_col_by_position
       :  Model.t
       -> _ t
       -> float
       -> [ `Before | `At of Column_id.t | `After ] option
 
-    (** Returns the vertical position one page away from the current focus (above for [dir
-        = Prev] or below for [dir = Next]). This can be used to implementing a
+    (** Returns the vertical position one page away from the current focus (above for
+        [dir = Prev] or below for [dir = Next]). This can be used to implementing a
         [page_focus_row] function in multi-table pages. Note that the position returned is
         relative to the top of the page, not the top of the table. *)
     val page_focus_row_target_position : Model.t -> _ t -> dir:Focus_dir.t -> float option
@@ -359,14 +359,14 @@ module type S = sig
       is not needed for most applications using the Table.
 
       The input render_row should render <tr> nodes, and attrs should be a list of Vdom
-      attributes for the table.  *)
+      attributes for the table. *)
   val create
     :  ?override_header_on_click:
          (Column_id.t -> Js_of_ocaml.Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
     -> Model.t Incr.t
     -> old_model:Model.t option Incr.t
          (** old_model can be set to None if the previous model did not exist or was in an
-        error state. *)
+             error state. *)
     -> inject:(Action.t -> unit Vdom.Effect.t)
     -> rows:'row Row_id.Map.t Incr.t
     -> columns:(Column_id.t * 'row Column.t) list Incr.t
@@ -389,8 +389,7 @@ module type S = sig
 
       We set z-indexes using inline styles for proper rendering. You can set your own
       values for these by providing css variable values (search for `z_index_name` to see
-      this in the ml file.)
-  *)
+      this in the ml file.) *)
   val view
     :  ?override_header_on_click:
          (Column_id.t -> Js_of_ocaml.Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)

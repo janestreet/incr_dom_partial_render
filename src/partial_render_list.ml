@@ -52,16 +52,15 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
   type 'v t =
     { heights : Heights.t (** Acceleration structure for height queries *)
     ; render_range : Sort_key.t Interval.t
-    (** Section of keys to put in DOM
-        This includes extra rows above and below what is actually visible *)
-    ; rows_to_render : 'v Sort_key.Map.t (** Full map of [render_range]  *)
+    (** Section of keys to put in DOM This includes extra rows above and below what is
+        actually visible *)
+    ; rows_to_render : 'v Sort_key.Map.t (** Full map of [render_range] *)
     ; measurements : Measurements.t option
     ; height_cache : Height_cache.t
-    (** The height cache is stashed here after trimming so that it can be
-        accessed later in measure_heights. This way the app doesn't have to
-        store it in its derived model and pass it back to us. The app still
-        stores the height cache in its model, it just doesn't also have to store
-        a trimmed version in its derived model.*)
+    (** The height cache is stashed here after trimming so that it can be accessed later
+        in measure_heights. This way the app doesn't have to store it in its derived model
+        and pass it back to us. The app still stores the height cache in its model, it
+        just doesn't also have to store a trimmed version in its derived model. *)
     ; min_key : Sort_key.t option
     ; max_key : Sort_key.t option
     }
