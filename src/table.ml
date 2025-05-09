@@ -318,6 +318,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       ; sorted_rows : 'a Key.Map.t
       ; columns : (Column_id.t * 'a Column.t) Int.Map.t
       ; column_num_lookup : int Column_id.Map.t
+      ; extra_header_attrs : Vdom.Attr.t Column_id.Map.t
       ; sort_criteria : 'a Column.t Sort_criteria.t
       ; row_view : 'a Row_view.t
       ; scroll_region : Scroll_region.t option
@@ -333,7 +334,13 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
   module Extra = struct
     include Extra_model
 
-    let create m ~rows ~(columns : (Column_id.t * _ Column.t) list Incr.t) =
+    let create
+      ?(extra_header_attrs = Incr.return Column_id.Map.empty)
+      m
+      ~rows
+      ~(columns : (Column_id.t * _ Column.t) list Incr.t)
+      ()
+      =
       let scroll_region =
         (* This needs to fire whenever the model or rows change so that it can actually
            find the element [scroll_region] after it is drawn. *)
@@ -408,6 +415,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       and sorted_rows
       and columns
       and column_num_lookup
+      and extra_header_attrs
       and sort_criteria
       and scroll_region
       and floating_col
@@ -416,6 +424,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       ; sorted_rows
       ; columns
       ; column_num_lookup
+      ; extra_header_attrs
       ; sort_criteria
       ; row_view
       ; scroll_region
@@ -979,7 +988,15 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       @> sticky_style)
   ;;
 
-  let view_header ?override_on_click ~inject ~columns ~top_sticky_pos ~left_sticky_pos m =
+  let view_header
+    ?override_on_click
+    ~inject
+    ~columns
+    ~extra_header_attrs
+    ~top_sticky_pos
+    ~left_sticky_pos
+    m
+    =
     let get_sticky_style ~is_grouped_header ~top_sticky_pos =
       let first_cell =
         sticky_style
@@ -1013,6 +1030,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
       and id = m >>| Model.id
       and focused_col = m >>| Model.focus_col
       and columns
+      and extra_header_attrs
       and top_sticky_pos =
         match top_sticky_pos with
         | None -> Incr.return None
@@ -1074,7 +1092,14 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           @ [ Attr.style (Css_gen.concat [ sticky_style; data.Column.header_style ]) ]
         in
         Node.th
-          ~attrs:([ Attr.many_without_merge attrs ] @ data.Column.header_attrs)
+          ~attrs:
+            (List.concat
+               [ [ Attr.many_without_merge attrs ]
+               ; data.Column.header_attrs
+               ; [ Map.find extra_header_attrs key
+                   |> Option.value ~default:Vdom.Attr.empty
+                 ]
+               ])
           [ data.Column.header; sort_direction_indicator ])
     in
     let group_nodes =
@@ -1198,6 +1223,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     let spacer_before = unstage (spacer ~key:"before") in
     let spacer_after = unstage (spacer ~key:"after") in
     let columns = d >>| Extra.columns in
+    let extra_header_attrs = d >>| Extra.extra_header_attrs in
     let column_ids =
       let%map column_ids = d >>| Extra.columns in
       List.map (Map.data column_ids) ~f:fst
@@ -1216,6 +1242,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         ?override_on_click:override_header_on_click
         ~inject
         ~columns
+        ~extra_header_attrs
         ~top_sticky_pos
         ~left_sticky_pos
         m
@@ -1245,6 +1272,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
 
   let create
     ?override_header_on_click
+    ?extra_header_attrs
     model
     ~old_model
     ~inject
@@ -1253,7 +1281,7 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     ~render_row
     ~attrs
     =
-    let extra = Extra.create model ~rows ~columns in
+    let extra = Extra.create ?extra_header_attrs model ~rows ~columns () in
     let%map apply_action =
       let%map apply_action = apply_action model extra in
       fun action _ ~schedule_action:_ -> apply_action action

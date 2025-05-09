@@ -134,7 +134,9 @@ module type S = sig
       -> ?sort_by:(Row_id.t -> 'a -> Sort_key.t)
            (** used to extract a sortable value for this column from a row. *)
       -> ?header_style:Css_gen.t (** Prefer header_attrs over this *)
-      -> ?header_attrs:Vdom.Attr.t list (** Added to the th node *)
+      -> ?header_attrs:Vdom.Attr.t list
+           (** Added to the th node. If these frequently change, consider using the
+               extra_header_attrs incr in Table.create instead *)
       -> header:Vdom.Node.t
            (** rendered at the top of the column. this node is wrapped in a <th> node with
                other attributes *)
@@ -363,6 +365,10 @@ module type S = sig
   val create
     :  ?override_header_on_click:
          (Column_id.t -> Js_of_ocaml.Dom_html.mouseEvent Js.t -> unit Vdom.Effect.t)
+    -> ?extra_header_attrs:Vdom.Attr.t Column_id.Map.t Incr.t
+         (** Use this to add extra attributes to header nodes. Useful when you have header
+             attributes that frequently change. We don't want to change header_attrs in
+             Column.t too often as it can cause a lot of unnecessary work *)
     -> Model.t Incr.t
     -> old_model:Model.t option Incr.t
          (** old_model can be set to None if the previous model did not exist or was in an
