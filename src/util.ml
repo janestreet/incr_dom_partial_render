@@ -111,6 +111,7 @@ module Scroll = struct
   let float = Js_of_ocaml.Js.float_of_number
 
   let scroll ?(in_ = Scroll_region.Window) (dir : Dir.t) shift =
+    let shift = Float.round_nearest shift in
     if [%equal: float] shift 0.
     then `Didn't_scroll
     else (
