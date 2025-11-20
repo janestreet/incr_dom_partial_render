@@ -106,7 +106,7 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
       let module Rect = Js_misc.Rect in
       (* The top of the view_rect, as measured from the top of the table body. Note that
          the top of tbody_rect is measured against the viewport, and so is a negative
-         number when the top row is above the top of the viewport.  *)
+         number when the top row is above the top of the viewport. *)
       let scroll_top = Rect.top view_rect -. Rect.top list_rect in
       (* The height of the table, which excludes the height of the header *)
       let scroll_bot = scroll_top +. Rect.float_height view_rect in
@@ -342,8 +342,8 @@ module Make (Row_id : Row_id) (Sort_key : Sort_key with type row_id := Row_id.t)
     match height with
     | None -> cache
     | Some height ->
-      (* Optimization: Don't bother adding measured height to [height_cache] if it
-         is approximately equal to the existing height for that key. *)
+      (* Optimization: Don't bother adding measured height to [height_cache] if it is
+         approximately equal to the existing height for that key. *)
       let float_approx_equal f1 f2 = Float.(abs (f1 - f2) < 0.001) in
       if float_approx_equal height height_guess
       then Map.remove cache key
