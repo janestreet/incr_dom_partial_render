@@ -2,8 +2,8 @@ open! Core
 open! Import
 
 module Cell : sig
-  (* Each cell's nodes are wrapped in a <td> node with the given [attrs] and possibly
-     some additional attributes *)
+  (* Each cell's nodes are wrapped in a <td> node with the given [attrs] and possibly some
+     additional attributes *)
 
   type t =
     { (* [attrs] should not include an [id] attribute, it may be overwritten *)

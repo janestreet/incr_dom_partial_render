@@ -91,7 +91,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
     [@@deriving compare, sexp, fields ~getters]
   end
 
-  (* Core.List.compare doesn't check its arguments for physical equality, so override that here. *)
+  (* Core.List.compare doesn't check its arguments for physical equality, so override that
+     here. *)
   let short_circuiting_list_compare f a b =
     if phys_equal a b then 0 else List.compare f a b
   ;;
@@ -367,7 +368,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
         | None -> false, None
         | Some { Visibility_info.tbody_rect; view_rect; _ } ->
           let is_off_screen =
-            (* the table is offscreen if the top of the table is beyond the bottom of the screen *)
+            (* the table is offscreen if the top of the table is beyond the bottom of the
+               screen *)
             tbody_rect.top > view_rect.bottom
             (* or when the bottom of the table is above the screen *)
             || tbody_rect.bottom < 0.0
@@ -859,8 +861,8 @@ module Make (Row_id : Id) (Column_id : Id) (Sort_spec : Sort_spec) = struct
           let open Option.Let_syntax in
           let%map column_group = Dom_html.getElementById_opt (Html_id.column_group m.id)
           and column_header = Dom_html.getElementById_opt (Html_id.column_header m.id) in
-          (* We don't use [Js_misc.viewport_rect_of_element] here so that we can round down
-             instead of rounding to the nearest interger. This reduces jitter. *)
+          (* We don't use [Js_misc.viewport_rect_of_element] here so that we can round
+             down instead of rounding to the nearest interger. This reduces jitter. *)
           let column_group_top =
             Js.float_of_number column_group##getBoundingClientRect##.top
           in
